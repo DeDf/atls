@@ -64,7 +64,8 @@ s32 a_tls13_dec_gcm_openssl(void *arg, crypto_info_t *info)
                                 EVP_CTRL_GCM_SET_TAG,
                                 EVP_GCM_TLS_TAG_LEN,
                                 c + c_len - EVP_GCM_TLS_TAG_LEN)
-        || !EVP_CipherUpdate(tls->read_ctx, NULL, &tmplen, header, sizeof(header))
+        || 
+!EVP_CipherUpdate(tls->read_ctx, NULL, &tmplen, header, sizeof(header))
         || !EVP_CipherUpdate(tls->read_ctx, tmpbuf, &len, c, c_len - EVP_GCM_TLS_TAG_LEN)
         || !EVP_CipherFinal_ex(tls->read_ctx, tmpbuf, &tmplen))
     {

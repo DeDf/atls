@@ -9,6 +9,7 @@
 unsigned char buf[1024];
 unsigned short port = 44444;
 #define replay "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 23\r\nServer: mrpre\r\n\r\nWelcome to mrpre's Home"
+
 /*Simple A_TLS server*/
 int main(int argc, char **argv)
 {
@@ -19,7 +20,7 @@ int main(int argc, char **argv)
     struct timeval timeout={3,0};//3s
 
     a_tls_init_env();
-    bzero(&server_addr,sizeof(server_addr));
+    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htons(INADDR_ANY);
     server_addr.sin_port = htons(port);
@@ -98,7 +99,8 @@ int main(int argc, char **argv)
     printf("Warning: GM SSL is not supported\n");
 #endif
 
-    for (;;) {
+    for (;;)
+    {
         struct sockaddr_in client_addr;
         int client_fd, ret;
         socklen_t length = sizeof(client_addr);
@@ -110,6 +112,7 @@ int main(int argc, char **argv)
             printf("accept error\n");
             exit(-2);
         }
+
         printf("process New client\n");
         tls = a_tls_new(cfg);
         if (tls == NULL) {

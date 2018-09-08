@@ -710,7 +710,8 @@ again:
         return total;
     }
 
-    if (total) {
+    if (
+total) {
         c->read->ready = 1;
         return total;
     }

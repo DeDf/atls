@@ -871,16 +871,17 @@ s32 a_tls_init(a_tls_t *tls)
 
 s32 a_tls_handshake(a_tls_t *tls)
 {
-
     s32 ret;
 
 #ifdef TLS_DEBUG
     printf("a_tls_handshake start state:%d\n",tls->state);
 #endif
-    for (;;) {
+
+    for (;;)
+    {
         ret = tls->state_proc[tls->state](tls);
 #ifdef TLS_DEBUG
-        printf("tls_state_proc ret:%d end state:%d\n",ret, tls->state);
+        printf("tls_state_proc ret:%d end state:%d\n", ret, tls->state);
 #endif
         if (ret != A_TLS_OK) {
             return ret;
@@ -1488,20 +1489,18 @@ void a_tls_cfg_free(a_tls_cfg_t *cfg)
 
 void *a_tls_cfg_new()
 {
-    a_tls_cfg_t *ret;
+    a_tls_cfg_t *p = a_tls_malloc(sizeof(a_tls_cfg_t));
+    if (p)
+    {
+        memset(p, 0, sizeof(a_tls_cfg_t));
 
-    ret = a_tls_malloc(sizeof(a_tls_cfg_t));
-    if (ret == NULL) {
-        return NULL;
+        p->max_early_data = 16384;
+        p->cipers         = a_crypto_get_cipher_by_index(0);
+        p->srv_prefer     = 1;
+        p->ticket         = 1;
     }
 
-    memset(ret, 0, sizeof(a_tls_cfg_t));
-
-    ret->max_early_data = 16384;
-    ret->cipers         = a_crypto_get_cipher_by_index(0);
-    ret->srv_prefer     = 1;
-    ret->ticket         = 1;
-    return ret;
+    return p;
 }
 
 void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
@@ -1521,24 +1520,21 @@ void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
 
 void *a_tls_new(a_tls_cfg_t *cfg)
 {
-    a_tls_t * ret;
+    a_tls_t * p = a_tls_malloc(sizeof(a_tls_t));
+    if (p)
+    {
+        memset(p, 0, sizeof(a_tls_t));
 
-    ret = a_tls_malloc(sizeof(a_tls_t));
-    if (ret == NULL) {
-        return NULL;
+        p->state      = A_TLS_STATE_INIT;
+        p->cfg        = cfg;
+        p->state_proc = tls_state_proc;
+        p->spec       = &tls_spec;
+        p->support_gp = a_crypto_get_group_by_tls_id(A_CRYPTO_GROUP_ID_SECP256R1);
+
+        a_tls_cfg_check_cert(cfg);
     }
-
-    memset(ret, 0, sizeof(a_tls_t));
-
-    ret->state      = A_TLS_STATE_INIT;
-    ret->cfg        = cfg;
-    ret->state_proc = tls_state_proc;
-    ret->spec       = &tls_spec;
-    ret->support_gp = a_crypto_get_group_by_tls_id(A_CRYPTO_GROUP_ID_SECP256R1);
-
-    a_tls_cfg_check_cert(cfg);
-
-    return ret;
+    
+    return p;
 }
 
 void a_tls_free_sess(a_tls_sess_t *sess)
