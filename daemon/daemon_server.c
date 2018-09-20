@@ -1,8 +1,10 @@
-
+#include <sys/types.h>
 #include <stdio.h>
-
-#include "..\a_crypto.h"
-#include "..\a_tls.h"
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <a_crypto.h>
+#include <a_tls.h>
 
 unsigned char buf[1024];
 unsigned short port = 44444;
@@ -72,7 +74,7 @@ int main(int argc, char **argv)
     }
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     printf("Setting SM2 certificate\n");
     /*Now Setting ENC param*/
     if (!a_tls_cfg_set_key(cfg, "./cert/sm2.key")) {
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
     printf("Warning: GM SSL is not supported\n");
 #endif
 
-    for (;;)
+    while (1)
     {
         struct sockaddr_in client_addr;
         int client_fd, ret;
@@ -112,7 +114,6 @@ int main(int argc, char **argv)
             printf("accept error\n");
             exit(-2);
         }
-
         printf("process New client\n");
         tls = a_tls_new(cfg);
         if (tls == NULL) {
@@ -124,13 +125,15 @@ int main(int argc, char **argv)
         setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
         a_tls_set_fd(tls, client_fd);
-        if (a_tls_handshake(tls) != 0) {
+        if (a_tls_handshake(tls) != 0)
+        {
             printf("a_tls_handshake error\n");
             goto next;
         }
+
         memset(buf, 0 ,sizeof(buf));
         printf("Try to read %zu bytes from client.....\n", sizeof(buf));
-        ret = a_tls_read(tls, buf, sizeof(buf));
+        ret = a_tls_read(tls ,buf, sizeof(buf));
         if (ret <= 0)
         {
             printf("ret:%d\n",ret);
@@ -146,13 +149,16 @@ int main(int argc, char **argv)
         }
         printf("Recv %d bytes from client %s\n", ret, buf);
         ret = a_tls_write(tls, (unsigned char*)replay, sizeof(replay) - 1);
-        printf("reply to client :%d\n", ret);
+        printf("reply to client :%d\n",ret);
 next:
         close(client_fd);
         a_tls_free_tls(tls);
     }
 
     a_tls_cfg_free(cfg);
-    close(listen_fd);
+    if (listen_fd) {
+        close(listen_fd);
+    }
+
     return 0;
 }

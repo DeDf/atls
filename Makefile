@@ -12,14 +12,6 @@ CFLAGS += -DTLS_DEBUG
 endif
 ifdef cryptodir
 CFLAGS += -I$(cryptodir)/include -L$(cryptodir)/lib -Wl,-rpath=$(cryptodir)/lib
-acryptofile=$(cryptodir)/lib/libcrypto.a
-endif
-
-exist = $(shell if [ -f "$(acryptofile)" ]; then echo "exist"; else echo "notexist"; fi;)
-ifeq ($(exist), exist)
-cmd = gcc $(CFLAGS)  -o $(BINSRC) ./daemon/$(BINSRC).c $(TARGET).a $(acryptofile) -ldl -lpthread
-else
-cmd = gcc $(CFLAGS) ./daemon/$(BINSRC).c -o $(BINSRC) $(TARGET).a $(LDFLAG)
 endif
 
 all: static shared bin
@@ -34,6 +26,7 @@ shared:$(OBJS)
 	$(CC) $(OBJS) $(SCFLAGS) $(LDFLAG) -o $(TARGET).so
 
 bin:
-	$(cmd)
+	gcc $(CFLAGS) ./daemon/$(BINSRC).c -o $(BINSRC) $(TARGET).a $(LDFLAG)
+
 clean:
 	rm -f *.o *.so *.a $(BINSRC)

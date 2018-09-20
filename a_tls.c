@@ -1,5 +1,7 @@
-#include "a_crypto.h"
+
 #include "a_tls.h"
+#include <stdarg.h>
+
 s32 a_tls_snd_srv_hello(a_tls_t *tls);
 s32 a_tls_snd_srv_cert(a_tls_t *tls);
 s32 a_tls_snd_srv_ske(a_tls_t *tls);
@@ -24,30 +26,45 @@ s32 a_tls_dec(a_tls_t *tls, crypto_info_t *info)
 
 method_t tls_spec =
 {
-    .enc            = a_tls_enc,
-    .dec            = a_tls_dec,
-    .change_cipher  = a_tls_change_cipher_spec,
-    .init_cipher    = a_tls_init_cipher,
-    .flag           = (A_CRYPTO_CIPHER_TLS1
-                        |A_CRYPTO_CIPHER_TLS1_1
-                        |A_CRYPTO_CIPHER_TLS1_2),
+    a_tls_enc,
+    a_tls_dec,
+    a_tls_init_cipher,
+    a_tls_change_cipher_spec,
+    (A_CRYPTO_CIPHER_TLS1 |A_CRYPTO_CIPHER_TLS1_1 |A_CRYPTO_CIPHER_TLS1_2),
 };
 
 state_func tls_state_proc[A_TLS_STATE_MAX] =
 {
-    [A_TLS_STATE_INIT]              = a_tls_init,
-    [A_TLS_STATE_GET_CLNT_HELLO]    = a_tls_get_clnt_hello,
-    [A_TLS_STATE_SND_SRV_HELLO]     = a_tls_snd_srv_hello,
-    [A_TLS_STATE_SND_SRV_CERT]      = a_tls_snd_srv_cert,
-    [A_TLS_STATE_SND_SRV_KE]        = a_tls_snd_srv_ske,
-    [A_TLS_STATE_SND_SRV_DONE]      = a_tls_snd_srv_done,
-    [A_TLS_STATE_GET_CLNT_CKE]      = a_tls_get_clnt_cke,
-    [A_TLS_STATE_GET_CLNT_CCS]      = a_tls_get_clnt_ccs,
-    [A_TLS_STATE_GET_CLNT_FINISH]   = a_tls_get_clnt_finished,
-    [A_TLS_STATE_SND_SRV_CCS]       = a_tls_snd_srv_ccs,
-    [A_TLS_STATE_SND_SRV_TICKET]    = a_tls_snd_srv_ticket,
-    [A_TLS_STATE_SND_SRV_FINISH]    = a_tls_snd_srv_finished,
+    /*[A_TLS_STATE_INIT]              = */a_tls_init,
+    /*[A_TLS_STATE_GET_CLNT_HELLO]    = */a_tls_get_clnt_hello,
+    /*[A_TLS_STATE_SND_SRV_HELLO]     = */a_tls_snd_srv_hello,
+    /*[A_TLS_STATE_SND_SRV_KE]        = */a_tls_snd_srv_ske,
+    /*[A_TLS_STATE_SND_SRV_DONE]      = */a_tls_snd_srv_done,
+    /*[A_TLS_STATE_SND_SRV_CCS]       = */a_tls_snd_srv_ccs,
+    /*[A_TLS_STATE_SND_SRV_TICKET]    = */a_tls_snd_srv_ticket,
+    NULL,
+    /*[A_TLS_STATE_SND_SRV_CERT]      = */a_tls_snd_srv_cert,
+    NULL,
+    /*[A_TLS_STATE_SND_SRV_FINISH]    = */a_tls_snd_srv_finished,
+    /*[A_TLS_STATE_GET_CLNT_CCS]      = */a_tls_get_clnt_ccs,
+    /*[A_TLS_STATE_GET_CLNT_CKE]      = */a_tls_get_clnt_cke,
+    NULL,
+    /*[A_TLS_STATE_GET_CLNT_FINISH]   = */a_tls_get_clnt_finished,
 };
+
+void a_tls_error(a_tls_t *tls, char *format, ...)
+{
+    a_tls_err_t *err = a_tls_malloc(sizeof(a_tls_err_t) + 100);
+    if (err)
+    {
+        va_list ap;
+        va_start(ap, format);
+        err->str_len = vsnprintf(err->str, 100, format, ap);
+        va_end(ap);
+        err->next = tls->err_stack;
+        tls->err_stack = err;
+    }
+}
 
 s32 a_tls_change_cipher_spec(a_tls_t *tls, u32 flag)
 {
@@ -375,7 +392,7 @@ s32 a_tls_get_ske_tbs(a_tls_t *tls, u8 *in, u32 in_len, u8 *tbs, u32 *tbs_len)
     return A_TLS_OK;
 }
 
-s32 a_tls_snd_srv_ske_gm(a_tls_t *tls)
+s32 a_tls_snd_srv_ske_gm(a_tls_t *tls)  // Server Key Exchange
 {
     sigalg_pair_t *sig;
     crypto_info_t info;
@@ -439,8 +456,8 @@ s32 a_tls_snd_srv_ske_gm(a_tls_t *tls)
     l2n3((sign_len - 4), l);
     tls->state = A_TLS_STATE_SND_SRV_DONE;
     return a_tls_snd_msg(tls, a_tls_tmp_msg_buf, sign_len, A_TLS_RT_HANDHSHAKE);
-
 }
+
 s32 a_tls_snd_srv_ske(a_tls_t *tls)
 {
     sigalg_pair_t *sig;

@@ -1,5 +1,8 @@
-#include "a_crypto.h"
+
 #include "a_tls.h"
+
+#pragma comment ( lib, "libeay32.lib" )
+#pragma comment ( lib, "ssleay32.lib" )
 
 #define for_each_cipher(cipher)   \
     for(i = 0; i < sizeof(a_ciphers)/sizeof(a_cipher_t) && (cipher = &a_ciphers[i]) != NULL; i++)
@@ -310,7 +313,7 @@ a_cipher_t a_ciphers[] =
         NULL,NULL,NULL,
     },
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     /*GM1.1*/
     {
         "ECC_SM2_WITH_SM4_SM3",
@@ -357,7 +360,7 @@ a_md_t a_md[] =
         19,NULL,
     },
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     {
         A_CRYPTO_NID_SM3, NID_sm3, 64, 32,
         {0},
@@ -886,7 +889,7 @@ s32 light_rsa_add_pss_padding(a_md_t *md, u8 *in, u32 in_len, u8 *out, u32 out_l
     /*Set the leftmost 8emLen - emBits bits of the leftmost octet in maskedDB to zero.*/
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 s32 a_crypto_sm2_sign_openssl(void *arg, crypto_info_t *info)
 {
     EC_KEY *ec;
@@ -902,7 +905,7 @@ s32 a_crypto_sm2_sign_openssl(void *arg, crypto_info_t *info)
     ec_key = key;
     ec = EVP_PKEY_get0_EC_KEY(ec_key);
 
-#if OPENSSL_VERSION_NUMBER <= 0x10101007L
+#if OPENSSL_VERSION_NUMBER <= 0x10101005L
     #define sm2_sign_name SM2_do_sign
 #else
     #define sm2_sign_name sm2_do_sign
@@ -929,7 +932,7 @@ s32 a_crypto_sm2_dec_openssl(void *arg, crypto_info_t *info)
     u32 *out_len = info->async.out_len;
 
     outlen = A_TLS_PRE_MASTER_KEY_LEN;
-#if OPENSSL_VERSION_NUMBER <= 0x10101007L
+#if OPENSSL_VERSION_NUMBER <= 0x10101005L
     #define sm2_dec_name SM2_decrypt
 #else
     #define sm2_dec_name sm2_decrypt
@@ -1149,10 +1152,10 @@ void a_tls_init_crypto_env()
     _a_tls13_dec_gcm = a_tls13_dec_gcm_openssl;
 
     _a_crypto_rsa_sign = a_crypto_rsa_sign_openssl;
-    _a_crypto_rsa_dec = a_crypto_rsa_dec_openssl;
-    _a_crypto_ec_sign = a_crypto_ec_sign_openssl;
+    _a_crypto_rsa_dec  = a_crypto_rsa_dec_openssl;
+    _a_crypto_ec_sign  = a_crypto_ec_sign_openssl;
     _a_crypto_sm2_sign = a_crypto_sm2_sign_openssl;
-    _a_crypto_sm2_dec = a_crypto_sm2_dec_openssl;
+    _a_crypto_sm2_dec  = a_crypto_sm2_dec_openssl;
     _a_md_proc = a_md_do_digest_openssl;
 }
 

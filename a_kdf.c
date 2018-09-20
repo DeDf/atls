@@ -1,4 +1,4 @@
-#include "a_crypto.h"
+
 #include "a_tls.h"
 
 s32 a_crypto_HKDF_extract(a_md_t *md, u8 *salt, u32 salt_len, u8 *key, u32 key_len, u8 *out)

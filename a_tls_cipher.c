@@ -1,6 +1,5 @@
-#include "a_crypto.h"
-#include "a_tls.h"
 
+#include "a_tls.h"
 
 /*TLS 1.3 */
 s32 a_tls13_dec_gcm_openssl(void *arg, crypto_info_t *info)

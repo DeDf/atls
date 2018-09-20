@@ -1,8 +1,22 @@
 #ifndef _A_TLS_H_INCLUDED_
 #define _A_TLS_H_INCLUDED_
-#include "a_core.h"
-#define likely(x)       __builtin_expect(!!(x), 1)
-#define unlikely(x)     __builtin_expect(!!(x), 0)
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include "a_crypto.h"
+#include <winsock2.h>
+
+#define u32 unsigned int
+#define u16 unsigned short
+#define s32 int
+#define s16 short int
+#define u8  unsigned char
+#define s8  char
+
+#define likely(x)       (x) //__builtin_expect(!!(x), 1)
+#define unlikely(x)     (x) //__builtin_expect(!!(x), 0)
 
 #define n2s(c,s)	((s=(((unsigned int)(c[0]))<< 8)| \
 			    (((unsigned int)(c[1]))    )),c+=2)
@@ -25,17 +39,17 @@
                   c[1]=(unsigned char)(((l)>> 8)&0xff), \
                   c[2]=(unsigned char)(((l)    )&0xff)),c+=3)
 
-#define a_tls_error(__tls, __str, __args...) \
-do\
-{\
-    a_tls_err_t *__err = a_tls_malloc(sizeof(a_tls_err_t) + 100);\
-    if (__err == NULL) {\
-        break;\
-    }\
-    __err->str_len = snprintf(__err->str, 100, __str, ##__args);\
-    __err->next = __tls->err_stack;\
-    __tls->err_stack = __err;\
-}while(0);\
+// #define a_tls_error(__tls, __str, __args...) \
+// do\
+// {\
+//     a_tls_err_t *__err = a_tls_malloc(sizeof(a_tls_err_t) + 100);\
+//     if (__err == NULL) {\
+//         break;\
+//     }\
+//     __err->str_len = snprintf(__err->str, 100, __str, ##__args);\
+//     __err->next = __tls->err_stack;\
+//     __tls->err_stack = __err;\
+// }while(0);\
 
 #define A_TLS_OK            0
 #define A_TLS_LACK          1
@@ -485,7 +499,7 @@ s32 a_tls_init_cipher(a_tls_t *tls, u32 flag);
 s32 a_tls_read(a_tls_t *tls, u8 *buf, u32 len);
 s32 a_tls_write(a_tls_t *tls, u8 *buf, u32 len);
 
-
+void a_tls_error(a_tls_t *tls, char *format, ...);
 
 typedef struct {
     unsigned long size;

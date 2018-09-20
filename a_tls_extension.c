@@ -1,4 +1,4 @@
-#include "a_crypto.h"
+
 #include "a_tls.h"
 
 s32 a_tls_ext_parse_renegotiation(a_tls_t *tls, u8 *ext, u32 ext_len)
@@ -470,9 +470,10 @@ s32 a_tls_ext_parse_sig(a_tls_t *tls, u8 *ext, u32 ext_len)
     save_sig = tls->handshake->clnt_sig;
     while(p < ext + ext_len)
     {
+        s8 index;
         n2s(p, sig_nid);
 
-        s8 index = a_tls_get_sigalg_index(sig_nid);
+        index = a_tls_get_sigalg_index(sig_nid);
         if (index < 0) {
             continue;
         }
@@ -586,25 +587,41 @@ s32 a_tls_ext_parse_sni(a_tls_t *tls, u8 *ext, u32 ext_len)
     return A_TLS_OK;
 }
 
-ext_func_t ext_proc[A_TLS_EXT_MAX] =
+unsigned long g_ext_proc_inited;
+
+ext_func_t ext_proc[A_TLS_EXT_MAX];
+
+#define INIT_EXT(i, parse1, gen2, next3, flag4) \
+    ext_proc[i].parse = parse1, \
+    ext_proc[i].gen   = gen2,   \
+    ext_proc[i].next  = next3,  \
+    ext_proc[i].flag  = flag4;
+
+void init_ext_proc()
 {
-    [A_TLS_EXT_SRV_NAME]   = {a_tls_ext_parse_sni, NULL, A_TLS_EXT_SUPPORT_GP, A_TLS_VERSION_ALL},
-    [A_TLS_EXT_SUPPORT_GP] = {a_tls_ext_parse_support_gp, NULL, A_TLS_EXT_SIG_ALG, A_TLS_VERSION_ALL},
-    [A_TLS_EXT_SIG_ALG]    = {a_tls_ext_parse_sig, NULL, A_TLS_EXT_SESS_TICKET, A_TLS_VERSION_ALL},
-    [A_TLS_EXT_SESS_TICKET]= {a_tls_ext_parse_session_ticket, a_tls_ext_gen_session_ticket, A_TLS_EXT_PSK, A_TLS_VERSION_ALL_OLD},
-    [A_TLS_EXT_PSK]        = {a_tls_ext_parse_psk, a_tls_ext_gen_psk, A_TLS_EXT_EARLY_DATA, A_TLS_1_3},
-    [A_TLS_EXT_EARLY_DATA] = {a_tls_ext_parse_early_data, a_tls_ext_gen_early_data, A_TLS_EXT_SUPPORT_VER, A_TLS_1_3},
-    [A_TLS_EXT_SUPPORT_VER]= {a_tls_ext_parse_support_ver, a_tls_ext_gen_support_ver, A_TLS_EXT_PSK_MODE, A_TLS_1_3},
-    [A_TLS_EXT_PSK_MODE]   = {NULL, NULL, A_TLS_EXT_ALG_CERT, A_TLS_1_3},
-    [A_TLS_EXT_ALG_CERT]   = {NULL, NULL, A_TLS_EXT_KEY_SHARE, A_TLS_1_3},
-    [A_TLS_EXT_KEY_SHARE]  = {a_tls_ext_parse_ks, a_tls_ext_gen_ks, A_TLS_EXT_RENEGO, A_TLS_1_3},
-    [A_TLS_EXT_RENEGO]     = {a_tls_ext_parse_renegotiation, a_tls_ext_gen_renegotiation, A_TLS_EXT_MAX, A_TLS_VERSION_ALL_OLD},
+    if (!g_ext_proc_inited)
+    {
+            INIT_EXT(A_TLS_EXT_SRV_NAME,   a_tls_ext_parse_sni, NULL, A_TLS_EXT_SUPPORT_GP, A_TLS_VERSION_ALL);
+            INIT_EXT(A_TLS_EXT_SUPPORT_GP, a_tls_ext_parse_support_gp, NULL, A_TLS_EXT_SIG_ALG, A_TLS_VERSION_ALL);
+            INIT_EXT(A_TLS_EXT_SIG_ALG,    a_tls_ext_parse_sig, NULL, A_TLS_EXT_SESS_TICKET, A_TLS_VERSION_ALL);
+            INIT_EXT(A_TLS_EXT_SESS_TICKET,a_tls_ext_parse_session_ticket, a_tls_ext_gen_session_ticket, A_TLS_EXT_PSK, A_TLS_VERSION_ALL_OLD);
+            INIT_EXT(A_TLS_EXT_PSK,        a_tls_ext_parse_psk, a_tls_ext_gen_psk, A_TLS_EXT_EARLY_DATA, A_TLS_1_3);
+            INIT_EXT(A_TLS_EXT_EARLY_DATA, a_tls_ext_parse_early_data, a_tls_ext_gen_early_data, A_TLS_EXT_SUPPORT_VER, A_TLS_1_3);
+            INIT_EXT(A_TLS_EXT_SUPPORT_VER,a_tls_ext_parse_support_ver, a_tls_ext_gen_support_ver, A_TLS_EXT_PSK_MODE, A_TLS_1_3);
+            INIT_EXT(A_TLS_EXT_PSK_MODE,   NULL, NULL, A_TLS_EXT_ALG_CERT, A_TLS_1_3);
+            INIT_EXT(A_TLS_EXT_ALG_CERT,   NULL, NULL, A_TLS_EXT_KEY_SHARE, A_TLS_1_3);
+            INIT_EXT(A_TLS_EXT_KEY_SHARE,  a_tls_ext_parse_ks, a_tls_ext_gen_ks, A_TLS_EXT_RENEGO, A_TLS_1_3);
+            INIT_EXT(A_TLS_EXT_RENEGO,     a_tls_ext_parse_renegotiation, a_tls_ext_gen_renegotiation, A_TLS_EXT_MAX, A_TLS_VERSION_ALL_OLD);
+            g_ext_proc_inited = 1;
+    }
 };
 
 s32 a_tls_parse_extension(a_tls_t *tls, u8 *ext, s16 ext_len)
 {
     u16 len = 0;
     u16 ext_type;
+
+    init_ext_proc();
 
     while(ext_len > 0) {
         n2s(ext, ext_type);
@@ -630,6 +647,8 @@ s32 a_tls_construct_extension(a_tls_t *tls, u8 *buf, u32 type)
     u8 *p = buf;
     s32 ret;
     u32 i;
+
+    init_ext_proc();
 
     for (i = A_TLS_EXT_SRV_NAME; i < A_TLS_EXT_MAX;) {
         if (ext_proc[i].gen

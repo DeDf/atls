@@ -1,5 +1,6 @@
-#include "a_crypto.h"
+
 #include "a_tls.h"
+
 u8 a_tls_tmp_record_buf[16384];
 u8 a_tls_tmp_msg_buf[16384];
 u8 a_tls_tmp_ciphertext_buf[16384];
@@ -876,12 +877,10 @@ s32 a_tls_handshake(a_tls_t *tls)
 #ifdef TLS_DEBUG
     printf("a_tls_handshake start state:%d\n",tls->state);
 #endif
-
-    for (;;)
-    {
+    for (;;) {
         ret = tls->state_proc[tls->state](tls);
 #ifdef TLS_DEBUG
-        printf("tls_state_proc ret:%d end state:%d\n", ret, tls->state);
+        printf("tls_state_proc ret:%d end state:%d\n",ret, tls->state);
 #endif
         if (ret != A_TLS_OK) {
             return ret;
@@ -1085,7 +1084,7 @@ s32 a_tls_check_cipher(a_tls_t *tls, a_cipher_t *cipher)
     return A_TLS_OK;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 s32 a_tls_process_cke_ecc(void *arg, u8 *in, u32 in_len)
 {
     s32 ret;
@@ -1206,7 +1205,7 @@ s32 a_tls_process_cke_ecdh(void *arg, u8 *in, u32 in_len)
     return A_TLS_OK;
 }
 
-s32 a_tls_construct_srv_hello(a_tls_t *tls,  u8 *buf)
+s32 a_tls_construct_srv_hello(a_tls_t *tls,  u8 *buf)  // ServerHello
 {
     u8 *p = buf;
 
@@ -1317,7 +1316,7 @@ s32 a_tls_cipher_get(a_tls_t *tls, u8 *ciphers, u32 ciphers_len)
 }
 
 s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
-{
+                                 {
     u8 *p, *ciphers;
     s32 len, ciphers_len, ext_len;
     u16 version;
@@ -1489,18 +1488,20 @@ void a_tls_cfg_free(a_tls_cfg_t *cfg)
 
 void *a_tls_cfg_new()
 {
-    a_tls_cfg_t *p = a_tls_malloc(sizeof(a_tls_cfg_t));
-    if (p)
-    {
-        memset(p, 0, sizeof(a_tls_cfg_t));
+    a_tls_cfg_t *ret;
 
-        p->max_early_data = 16384;
-        p->cipers         = a_crypto_get_cipher_by_index(0);
-        p->srv_prefer     = 1;
-        p->ticket         = 1;
+    ret = a_tls_malloc(sizeof(a_tls_cfg_t));
+    if (ret == NULL) {
+        return NULL;
     }
 
-    return p;
+    memset(ret, 0, sizeof(a_tls_cfg_t));
+
+    ret->max_early_data = 16384;
+    ret->cipers         = a_crypto_get_cipher_by_index(0);
+    ret->srv_prefer     = 1;
+    ret->ticket         = 1;
+    return ret;
 }
 
 void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
@@ -1520,21 +1521,24 @@ void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
 
 void *a_tls_new(a_tls_cfg_t *cfg)
 {
-    a_tls_t * p = a_tls_malloc(sizeof(a_tls_t));
-    if (p)
-    {
-        memset(p, 0, sizeof(a_tls_t));
+    a_tls_t * a_tls;
 
-        p->state      = A_TLS_STATE_INIT;
-        p->cfg        = cfg;
-        p->state_proc = tls_state_proc;
-        p->spec       = &tls_spec;
-        p->support_gp = a_crypto_get_group_by_tls_id(A_CRYPTO_GROUP_ID_SECP256R1);
-
-        a_tls_cfg_check_cert(cfg);
+    a_tls = a_tls_malloc(sizeof(a_tls_t));
+    if (a_tls == NULL) {
+        return NULL;
     }
-    
-    return p;
+
+    memset(a_tls, 0, sizeof(a_tls_t));
+
+    a_tls->state      = A_TLS_STATE_INIT;
+    a_tls->cfg        = cfg;
+    a_tls->state_proc = tls_state_proc;
+    a_tls->spec       = &tls_spec;
+    a_tls->support_gp = a_crypto_get_group_by_tls_id(A_CRYPTO_GROUP_ID_SECP256R1);
+
+    a_tls_cfg_check_cert(cfg);
+
+    return a_tls;
 }
 
 void a_tls_free_sess(a_tls_sess_t *sess)
@@ -1688,7 +1692,7 @@ s32 a_tls_gen_tls_cert(a_tls_cfg_t *cfg, X509 **certs, u32 cert_index, s32 num, 
     return 1;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 s32 a_tls_cfg_set_sign_key(a_tls_cfg_t *cfg, s8 *path)
 {
     const EC_GROUP *grp = NULL;
@@ -1819,7 +1823,7 @@ s32 a_tls_cfg_set_cert(a_tls_cfg_t *cfg, s8 *path)
         if((type == EVP_PKEY_RSA) && cfg->pkey[A_CRYPTO_NID_RSA]) {
             tmp_index = A_CRYPTO_NID_RSA;
             ret = X509_check_private_key(certs[idx], cfg->pkey[A_CRYPTO_NID_RSA]);
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
         } else if ((type == EVP_PKEY_RSA_PSS) && cfg->pkey[A_CRYPTO_NID_RSAPSS]) {
             tmp_index = A_CRYPTO_NID_RSAPSS;
             ret = X509_check_private_key(certs[idx], cfg->pkey[A_CRYPTO_NID_RSAPSS]);
@@ -1827,7 +1831,7 @@ s32 a_tls_cfg_set_cert(a_tls_cfg_t *cfg, s8 *path)
         } else if(type == EVP_PKEY_EC) {
 
             ret = 0;
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
             const EC_GROUP *grp = EC_KEY_get0_group(EVP_PKEY_get0_EC_KEY(certpk));
             if (EC_GROUP_get_curve_name(grp) == NID_sm2
                 && cfg->pkey[A_CRYPTO_NID_SM])
@@ -1912,7 +1916,7 @@ s32 a_tls_cfg_set_key(a_tls_cfg_t *cfg, s8 *path)
 #else
         grp = EC_KEY_get0_group(pkey->pkey.ec);
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101003L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
         if (EC_GROUP_get_curve_name(grp) == NID_sm2) {
             if (cfg->pkey[A_CRYPTO_NID_SM] != NULL) {
                 return 0;
@@ -2030,7 +2034,7 @@ s32 a_tls_get_cipher_name(a_tls_t *tls, s8 **data, u32 *len)
     }
 
     *data = tls->sess->cipher->name;
-    *len  = (u32)strlen(tls->sess->cipher->name);
+    *len  = (u32)strlen(tls->sess->cipher->name) - 1;
     return 1;
 }
 
@@ -2054,7 +2058,7 @@ s32 a_tls_get_sign_curve_name(a_tls_t *tls, s8 **data, u32 *len)
     sig = a_tls_select_sigalg(tls, &key, &md);
 
     *data = sig->name;
-    *len  = (u32)strlen(sig->name);
+    *len  = (u32)strlen(sig->name) - 1;
     return 1;
 }
 
@@ -2081,7 +2085,7 @@ s32 a_tls_get_exchange_curve_name(a_tls_t *tls, s8 **data, u32 *len)
         *data = tls->support_gp->name;
     }
 
-    *len = (u32)strlen(*data);
+    *len = (u32)strlen(*data) - 1;
     return 1;
 }
 

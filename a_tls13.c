@@ -1,4 +1,4 @@
-#include "a_crypto.h"
+
 #include "a_tls.h"
 
 s32 a_tls_get_clnt_hello(a_tls_t *tls);
@@ -37,29 +37,34 @@ s32 a_tls13_enc(a_tls_t *tls, crypto_info_t *info)
 
 method_t tls13_spec =
 {
-    .enc = a_tls13_enc,
-    .dec = a_tls13_dec,
-    .change_cipher  = a_tls13_change_cipher_spec,
-    .init_cipher    = a_tls13_init_cipher,
-    .flag = A_CRYPTO_CIPHER_TLS1_3,
+    a_tls13_enc,
+    a_tls13_dec,
+    a_tls13_init_cipher,
+    a_tls13_change_cipher_spec,
+    A_CRYPTO_CIPHER_TLS1_3,
 };
 
 
 state_func tls13_state_proc[A_TLS_STATE_MAX] =
 {
-    [A_TLS_STATE_INIT]              = a_tls_init,
-    [A_TLS_STATE_GET_CLNT_HELLO]    = a_tls_get_clnt_hello,
-    [A_TLS_STATE_SND_SRV_HELLO]     = a_tls13_snd_srv_hello,
-    [A_TLS_STATE_SND_SRV_CCS]       = a_tls13_snd_srv_ccs,
-    [A_TLS_STATE_SND_ENC_EXT]       = a_tls_snd_enc_ext,
-    [A_TLS_STATE_SND_SRV_CERT]      = a_tls13_snd_srv_cert,
-    [A_TLS_STATE_SND_SRV_CERT_VFY]  = a_tls_snd_srv_vfy,
-    [A_TLS_STATE_SND_SRV_FINISH]    = a_tls13_snd_srv_finished,
-    [A_TLS_STATE_GET_CLNT_CCS]      = a_tls13_get_clnt_ccs,
-    [A_TLS_STATE_GET_EARLY_DATA]    = a_tls_get_clnt_early_data,
-    [A_TLS_STATE_GET_CLNT_FINISH]   = a_tls13_get_clnt_finished,
-    [A_TLS_STATE_SND_NEW_TICKET]    = a_tls13_snd_srv_ticket,
-    [A_TLS_STATE_WRITTING]          = a_tls_nbio_flush,
+    /*[A_TLS_STATE_INIT]              = */a_tls_init,
+    /*[A_TLS_STATE_GET_CLNT_HELLO]    = */a_tls_get_clnt_hello,
+    /*[A_TLS_STATE_SND_SRV_HELLO]     = */a_tls13_snd_srv_hello,
+    NULL,
+    NULL,
+    /*[A_TLS_STATE_SND_SRV_CCS]       = */a_tls13_snd_srv_ccs,
+    NULL,
+    /*[A_TLS_STATE_SND_ENC_EXT]       = */a_tls_snd_enc_ext,
+    /*[A_TLS_STATE_SND_SRV_CERT]      = */a_tls13_snd_srv_cert,
+    /*[A_TLS_STATE_SND_SRV_CERT_VFY]  = */a_tls_snd_srv_vfy,
+    /*[A_TLS_STATE_SND_SRV_FINISH]    = */a_tls13_snd_srv_finished,
+    /*[A_TLS_STATE_GET_CLNT_CCS]      = */a_tls13_get_clnt_ccs,
+    NULL,
+    /*[A_TLS_STATE_GET_EARLY_DATA]    = */a_tls_get_clnt_early_data,
+    /*[A_TLS_STATE_GET_CLNT_FINISH]   = */a_tls13_get_clnt_finished,
+    /*[A_TLS_STATE_SND_NEW_TICKET]    = */a_tls13_snd_srv_ticket,
+    NULL,
+    /*[A_TLS_STATE_WRITTING]          = */a_tls_nbio_flush,
 };
 
 
