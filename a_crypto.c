@@ -763,7 +763,8 @@ a_group_t *a_crypto_get_group_by_tls_id(u32 tls_id)
 
     for(i = 0; i < sizeof(a_groups)/sizeof(a_group_t); i++)
     {
-        if (a_groups[i].tls_nid == tls_id) {
+        if (a_groups[i].tls_nid == tls_id)
+        {
             return &a_groups[i];
         }
     }

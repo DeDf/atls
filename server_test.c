@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
     a_tls_cfg_t *cfg;
     a_tls_t *tls;
     struct timeval timeout={3,0};//3s
+
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
@@ -68,6 +69,7 @@ int main(int argc, char* argv[])
             printf("accept error\n");
             exit(-2);
         }
+
         printf("process New client\n");
         tls = a_tls_new(cfg);
         if (tls == NULL) {
@@ -103,7 +105,7 @@ int main(int argc, char* argv[])
         }
         printf("Recv %d bytes from client %s\n", ret, buf);
         ret = a_tls_write(tls, (unsigned char*)replay, sizeof(replay) - 1);
-        printf("reply to client :%d\n",ret);
+        printf("reply to client :%d\n", ret);
 next:
         closesocket(client_fd);
         a_tls_free_tls(tls);

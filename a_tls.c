@@ -35,7 +35,7 @@ method_t tls_spec =
 
 state_func tls_state_proc[A_TLS_STATE_MAX] =
 {
-    /*[A_TLS_STATE_INIT]              = */a_tls_init,
+    /*[A_TLS_STATE_INIT]              = */a_tls_init,               // done!
     /*[A_TLS_STATE_GET_CLNT_HELLO]    = */a_tls_get_clnt_hello,
     /*[A_TLS_STATE_SND_SRV_HELLO]     = */a_tls_snd_srv_hello,
     /*[A_TLS_STATE_SND_SRV_KE]        = */a_tls_snd_srv_ske,
@@ -641,8 +641,8 @@ s32 a_tls_snd_srv_hello(a_tls_t *tls)
 /*All protocol start here*/
 s32 a_tls_get_clnt_hello(a_tls_t *tls)
 {
-    msg_t msg;
     s32 ret;
+    msg_t msg;
 
     ret = a_tls_get_message(tls, &msg, A_TLS_RT_HANDHSHAKE);
     if (ret != A_TLS_OK) {

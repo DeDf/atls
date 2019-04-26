@@ -599,10 +599,12 @@ s32 a_tls_save_hs(a_tls_t *tls, u8 *data, s32 data_len)
     u32 use_len = hs->diget_off;
     u8 *new_digest_cache = NULL;
 
-    if(unlikely(use_len + data_len > max_size)) {
+    if(unlikely(use_len + data_len > max_size))
+    {
         max_size += (data_len + 2048) & (~(2048 - 1));
         new_digest_cache = a_tls_malloc(max_size);
-        if (new_digest_cache == NULL) {
+        if (new_digest_cache == NULL)
+        {
             a_tls_error(tls, "tls realloc digest err");
             return A_TLS_ERR;
         }
@@ -671,21 +673,23 @@ s32 a_tls_get_message(a_tls_t *tls, msg_t *msg, s32 type)
     alert = 0;
 
 restart:
-    if (tls->read_state == A_TLS_READ_HEAD) {
+    if (tls->read_state == A_TLS_READ_HEAD)
+    {
         toread = A_TLS_HEAD_LEN - tls->cache_len;
         read_buf = tls->cache + tls->cache_len;
         tls->body_len = 0;
         tls->body_read = 0;
         ref_len = &tls->cache_len;
-
-    } else {
-
-        /*try to save into tmp buf first*/
-        if (!tls->body_read) {
+    }
+    else  /*try to save into tmp buf first*/
+    {
+        if (!tls->body_read)
+        {
             read_buf = a_tls_tmp_msg_read_buf;
             start_buf = read_buf;
-
-        } else {
+        }
+        else
+        {
             read_buf = tls->buf + tls->body_read;
             start_buf = tls->buf;
         }
@@ -698,24 +702,28 @@ restart:
 #ifdef TLS_DEBUG
     printf("a_tls_get_message :%d\n", nread);
 #endif
-    if (nread == 0) {
-        /*peer close*/
+    if (nread == 0)  /*peer close*/
+    {
         return A_TLS_READ_FIN;
-    } else if (nread < 0) {
-        if (errno == EAGAIN) {
+    }
+    else if (nread < 0)
+    {
+        if (errno == EAGAIN)
+        {
             return A_TLS_WANT_READ;
         }
         a_tls_error(tls, "tls get message err errno:%d", errno);
         return A_TLS_ERR;
     }
 
-    if (nread < toread) {
-
+    if (nread < toread)
+    {
         if (tls->read_state == A_TLS_READ_BODY
-            && !tls->body_read) {
-
+            && !tls->body_read)
+        {
             tls->buf = a_tls_malloc(16384);
-            if (tls->buf == NULL) {
+            if (tls->buf == NULL)
+            {
                 return A_TLS_ERR;
             }
             memcpy(tls->buf, start_buf, nread);
@@ -726,30 +734,33 @@ restart:
     }
 
     /*The len is what we want*/
-    if (tls->read_state == A_TLS_READ_HEAD) {
+    if (tls->read_state == A_TLS_READ_HEAD)
+    {
         u8 *pos = tls->cache;
         u16 version;
-        if (*pos != A_TLS_RT_CCS
-            && *pos != A_TLS_RT_ALERT
-            && *pos != A_TLS_RT_HANDHSHAKE
-            && *pos != A_TLS_RT_APPLICATION_DATA)
+
+        if (*pos != A_TLS_RT_CCS &&
+            *pos != A_TLS_RT_ALERT && 
+            *pos != A_TLS_RT_HANDHSHAKE && 
+            *pos != A_TLS_RT_APPLICATION_DATA)
         {
             a_tls_error(tls, "tls get record type err:%d", *pos);
             return A_TLS_ERR;
         }
 
-        if (*pos++ == A_TLS_RT_ALERT) {
+        if (*pos++ == A_TLS_RT_ALERT)
+        {
             alert = 1;
             type  = A_TLS_RT_ALERT;
         }
 
         n2s(pos, version);
 
-        if (version != A_TLS_TLS_1_0_VERSION
-            && version != A_TLS_TLS_1_1_VERSION
-            && version != A_TLS_TLS_1_2_VERSION
-            && version != A_TLS_TLS_1_2_VERSION
-            && version != A_TLS_GM_VERSION)
+        if (version != A_TLS_TLS_1_0_VERSION &&
+            version != A_TLS_TLS_1_1_VERSION && 
+            version != A_TLS_TLS_1_2_VERSION && 
+            version != A_TLS_TLS_1_2_VERSION && 
+            version != A_TLS_GM_VERSION)
         {
             a_tls_error(tls, "tls get record version err:%d", version);
             return A_TLS_ERR;
@@ -759,17 +770,20 @@ restart:
 
         tls->read_state = A_TLS_READ_BODY;
 
-        if(type == A_TLS_RT_CCS
-            && tls->cache[0] != A_TLS_RT_CCS)
+        if(type == A_TLS_RT_CCS && 
+           tls->cache[0] != A_TLS_RT_CCS)
         {
             /*TLS13 peer may not send ccs, so we construct a fake one*/
-            if (IS_TLS13(tls)) {
+            if (IS_TLS13(tls))
+            {
                 msg->data   = &ccs;
                 msg->len    = 1;
                 msg->rt_type= A_TLS_RT_CCS;
                 return A_TLS_OK;
 
-            } else {
+            }
+            else
+            {
                 a_tls_error(tls, "tls get expected ccs err:%d", tls->cache[0]);
                 return A_TLS_ERR;
             }
@@ -777,7 +791,8 @@ restart:
         goto restart;
     }
 
-    if (tls->buf) {
+    if (tls->buf)
+    {
         start_buf = a_tls_tmp_msg_read_buf;
         memcpy(a_tls_tmp_msg_read_buf, tls->buf, tls->body_len);
         a_tls_free(tls->buf);
@@ -796,20 +811,21 @@ restart:
         return A_TLS_OK;
     }
 
-    if (tls->read_ctx) {
+    if (tls->read_ctx)
+    {
         crypto_info.p       = start_buf;
         crypto_info.c       = start_buf;
         crypto_info.p_len   = tls->body_len;
         crypto_info.c_len   = tls->body_len;
         crypto_info.type    = type;
 
-        if (tls->spec->dec(tls, &crypto_info)
-            == A_TLS_ERR)
+        if (tls->spec->dec(tls, &crypto_info) == A_TLS_ERR)
         {
             /*If we don't accept early data but client has alredy sent it.
             * We should ignore it and reset cipher context.
             */
-            if (tls->ext.early_data == A_TLS_EARLY_DATA_REJECT) {
+            if (tls->ext.early_data == A_TLS_EARLY_DATA_REJECT)
+            {
                 //TO DO, we need count early data
                 memset(tls->seq[0], 0 ,8);
                 goto restart;
@@ -822,15 +838,18 @@ restart:
         msg->len    = crypto_info.p_len;
         msg->rt_type= crypto_info.type;
 
-    } else {
+    }
+    else
+    {
         msg->data   = start_buf;
         msg->len    = tls->body_len;
         msg->rt_type= tls->cache[0];
     }
 
-    if (alert) {
-
-        if (msg->len != 2) {
+    if (alert)
+    {
+        if (msg->len != 2)
+        {
             return A_TLS_ERR;
         }
 
@@ -850,24 +869,23 @@ s32 a_tls_change_cipher(a_tls_t *tls, u32 flag)
 s32 a_tls_init(a_tls_t *tls)
 {
     tls->handshake = a_tls_malloc(sizeof(a_tls_handshake_t));
-    if (tls->handshake == NULL) {
-        a_tls_free_tls(tls);
-        return A_TLS_ERR;
+    if (tls->handshake)
+    {
+        memset(tls->handshake, 0, sizeof(a_tls_handshake_t));
+
+        tls->handshake->diget_cache = a_tls_malloc(8192);
+        if (tls->handshake->diget_cache)
+        {
+            tls->handshake->diget_len = 8192;
+            tls->dir   = 1;/*server*/
+            tls->state = A_TLS_STATE_GET_CLNT_HELLO;
+
+            return A_TLS_OK;
+        }
     }
 
-    memset(tls->handshake, 0, sizeof(a_tls_handshake_t));
-
-    tls->handshake->diget_cache = a_tls_malloc(8192);
-    if (tls->handshake->diget_cache == NULL) {
-        a_tls_free_tls(tls);
-        return A_TLS_ERR;
-    }
-
-    tls->handshake->diget_len = 8192;
-
-    tls->dir   = 1;/*server*/
-    tls->state = A_TLS_STATE_GET_CLNT_HELLO;
-    return A_TLS_OK;
+    a_tls_free_tls(tls);
+    return A_TLS_ERR;
 }
 
 s32 a_tls_handshake(a_tls_t *tls)
@@ -875,19 +893,23 @@ s32 a_tls_handshake(a_tls_t *tls)
     s32 ret;
 
 #ifdef TLS_DEBUG
-    printf("a_tls_handshake start state:%d\n",tls->state);
+    printf("a_tls_handshake start state:%d\n", tls->state);
 #endif
-    for (;;) {
+    for (;;)
+    {
         ret = tls->state_proc[tls->state](tls);
 #ifdef TLS_DEBUG
-        printf("tls_state_proc ret:%d end state:%d\n",ret, tls->state);
+        printf("tls_state_proc ret:%d end state:%d\n", ret, tls->state);
 #endif
-        if (ret != A_TLS_OK) {
+        if (ret != A_TLS_OK)
+        {
             return ret;
         }
 
-        if (tls->state == A_TLS_STATE_ESTABLISH) {
-            if (tls->handshake) {
+        if (tls->state == A_TLS_STATE_ESTABLISH)
+        {
+            if (tls->handshake)
+            {
                 a_tls_free_hs(tls->handshake);
                 tls->handshake = NULL;
             }
@@ -1316,14 +1338,15 @@ s32 a_tls_cipher_get(a_tls_t *tls, u8 *ciphers, u32 ciphers_len)
 }
 
 s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
-                                 {
+{
     u8 *p, *ciphers;
     s32 len, ciphers_len, ext_len;
     u16 version;
 
     p = msg->data;
 
-    if (*p++ != A_TLS_MT_CLNT_HELLO) {
+    if (*p++ != A_TLS_MT_CLNT_HELLO)
+    {
         /*Not client hello message*/
         a_tls_error(tls, "tls clnt_hello type err");
         return A_TLS_ERR;
@@ -1332,7 +1355,8 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
     n2l3(p, len);
 
     /*client hello must monopolize the record totally*/
-    if (msg->data + msg->len != p + len) {
+    if (msg->data + msg->len != p + len)
+    {
         a_tls_error(tls, "tls clnt_hello len err msg->len:%d, len:%d", msg->len, len);
         return A_TLS_ERR;
     }
@@ -1359,21 +1383,27 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
     p += len;
 
     /*extension exist*/
-    if(likely(p + 2 <= msg->data + msg->len)) {
+    if(likely(p + 2 <= msg->data + msg->len))
+    {
         n2s(p, ext_len);
         a_tls_parse_extension(tls, p, ext_len);
         p += ext_len;
-
-    } else {
+    }
+    else
+    {
         tls->ext.no_ext = 1;
     }
 
-    if (tls->sess == NULL) {
-        if (A_TLS_OK != a_tls_sess_new(tls)) {
+    if (tls->sess == NULL)
+    {
+        if (A_TLS_OK != a_tls_sess_new(tls))
+        {
             return A_TLS_ERR;
         }
 
-    } else {
+    }
+    else
+    {
         tls->hit = 1;
 
         if (tls->sess->sni_len != tls->handshake->sni_len
@@ -1384,13 +1414,13 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
         }
     }
 
-    if (a_tls_check_version(tls, version) != A_TLS_OK) {
+    if (a_tls_check_version(tls, version) != A_TLS_OK)
+    {
         return A_TLS_ERR;
     }
 
     /*now we have select a version*/
-    if (a_tls_cipher_get(tls, ciphers, ciphers_len)
-        != A_TLS_OK)
+    if (a_tls_cipher_get(tls, ciphers, ciphers_len) != A_TLS_OK)
     {
         a_tls_error(tls, "tls a_tls_cipher_get err");
         return A_TLS_ERR;
@@ -1405,35 +1435,40 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
 s32 a_tls_check_version(a_tls_t *tls, u16 version)
 {
     /*Done in suport_version*/
-    if (IS_TLS13(tls)) {
+    if (IS_TLS13(tls))
+    {
         tls->flag = A_TLS_1_3;
         return A_TLS_OK;
     }
 
-    if (IS_TLSGM(tls)
-        && !tls->cfg->gm_support) {
+    if (IS_TLSGM(tls) && !tls->cfg->gm_support)
+    {
         a_tls_error(tls, "tls recv GMSSL but are not configured");
         return A_TLS_ERR;
     }
 
     /*select own version and set it to tls->version*/
     tls->handshake_version = version;
-
     tls->version = version;
 
-    if (version == A_TLS_GM_VERSION) {
+    if (version == A_TLS_GM_VERSION)
+    {
         tls->flag = A_TLS_GM;
-
-    } else if (version == A_TLS_TLS_1_0_VERSION) {
+    } 
+    else if (version == A_TLS_TLS_1_0_VERSION)
+    {
         tls->flag = A_TLS_1_0;
-
-    } else if (version == A_TLS_TLS_1_1_VERSION) {
+    }
+    else if (version == A_TLS_TLS_1_1_VERSION)
+    {
         tls->flag = A_TLS_1_1;
-
-    } else if (version == A_TLS_TLS_1_2_VERSION) {
+    }
+    else if (version == A_TLS_TLS_1_2_VERSION)
+    {
         tls->flag = A_TLS_1_2;
-
-    } else {
+    }
+    else
+    {
         a_tls_error(tls, "tls recv version err:%d", version);
         return A_TLS_ERR;
     }
@@ -1506,14 +1541,16 @@ void *a_tls_cfg_new()
 
 void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
 {
-    if (cfg->gm_support) {
+    if (cfg->gm_support)
+    {
         return;
     }
 
-    if (cfg->sign_cert && cfg->sign_key
-        && cfg->cert[A_CRYPTO_NID_SM] && cfg->pkey[A_CRYPTO_NID_SM]) {
-
-        if (X509_check_private_key(cfg->sign_cert, cfg->sign_key)) {
+    if ( cfg->sign_cert && cfg->cert[A_CRYPTO_NID_SM] && 
+         cfg->sign_key  && cfg->pkey[A_CRYPTO_NID_SM])
+    {
+        if (X509_check_private_key(cfg->sign_cert, cfg->sign_key))
+        {
             cfg->gm_support = 1;
         }
     }
@@ -1521,22 +1558,19 @@ void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
 
 void *a_tls_new(a_tls_cfg_t *cfg)
 {
-    a_tls_t * a_tls;
+    a_tls_t *a_tls = a_tls_malloc(sizeof(a_tls_t));
+    if (a_tls)
+    {
+        memset(a_tls, 0, sizeof(a_tls_t));
 
-    a_tls = a_tls_malloc(sizeof(a_tls_t));
-    if (a_tls == NULL) {
-        return NULL;
+        a_tls->state      = A_TLS_STATE_INIT;
+        a_tls->cfg        = cfg;
+        a_tls->state_proc = tls_state_proc;
+        a_tls->spec       = &tls_spec;
+        a_tls->support_gp = a_crypto_get_group_by_tls_id(A_CRYPTO_GROUP_ID_SECP256R1);
+
+        a_tls_cfg_check_cert(cfg);
     }
-
-    memset(a_tls, 0, sizeof(a_tls_t));
-
-    a_tls->state      = A_TLS_STATE_INIT;
-    a_tls->cfg        = cfg;
-    a_tls->state_proc = tls_state_proc;
-    a_tls->spec       = &tls_spec;
-    a_tls->support_gp = a_crypto_get_group_by_tls_id(A_CRYPTO_GROUP_ID_SECP256R1);
-
-    a_tls_cfg_check_cert(cfg);
 
     return a_tls;
 }
