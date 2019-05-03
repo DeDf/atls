@@ -411,7 +411,7 @@ typedef struct {
 } ext_func_t;
 
 /*tls.c*/
-s32 a_tls_get_clnt_hello(a_tls_t *tls);
+s32 a_tls_get_client_hello(a_tls_t *tls);
 extern method_t tls_spec;
 extern state_func tls_state_proc[];
 

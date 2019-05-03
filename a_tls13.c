@@ -1,8 +1,8 @@
 
 #include "a_tls.h"
 
-s32 a_tls_get_clnt_hello(a_tls_t *tls);
-s32 a_tls_get_clnt_cke(a_tls_t *tls);
+s32 a_tls_get_client_hello(a_tls_t *tls);
+s32 a_tls_get_client_cke(a_tls_t *tls);
 s32 a_tls13_snd_srv_hello(a_tls_t *tls);
 s32 a_tls13_snd_srv_ccs(a_tls_t *tls);
 s32 a_tls_snd_enc_ext(a_tls_t *tls);
@@ -48,7 +48,7 @@ method_t tls13_spec =
 state_func tls13_state_proc[A_TLS_STATE_MAX] =
 {
     /*[A_TLS_STATE_INIT]              = */a_tls_init,
-    /*[A_TLS_STATE_GET_CLNT_HELLO]    = */a_tls_get_clnt_hello,
+    /*[A_TLS_STATE_GET_CLNT_HELLO]    = */a_tls_get_client_hello,
     /*[A_TLS_STATE_SND_SRV_HELLO]     = */a_tls13_snd_srv_hello,
     NULL,
     NULL,

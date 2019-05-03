@@ -459,12 +459,15 @@ s32 a_tls_do_write(a_tls_t *tls, u8 *data, s32 data_len, s32 *written)
     *written = 0;
 
     nsend = send(tls->fd, p, data_len, 0);
-    if (nsend > 0) {
+    if (nsend > 0)
+    {
         *written = nsend;
         return A_TLS_OK;
-
-    } else {
-        if (errno == EAGAIN) {
+    }
+    else
+    {
+        if (errno == EAGAIN)
+        {
             return A_TLS_WANT_WRITE;
         }
         a_tls_error(tls, "a_tls_do_write err errno:%d", errno);
@@ -479,11 +482,13 @@ s32 a_tls_write_internal(a_tls_t *tls, u8 *data, s32 data_len)
 #ifdef TLS_DEBUG
     printf("internal try write:%d\n",data_len);
 #endif
-    for (;;) {
+    for (;;)
+    {
         ret = a_tls_do_write(tls, data, data_len, &written);
-        if (ret == A_TLS_OK) {
-
-            if (written < data_len) {
+        if (ret == A_TLS_OK)
+        {
+            if (written < data_len)
+            {
                 data += written;
                 data_len -= written;
                 /*try write again*/
@@ -495,9 +500,11 @@ s32 a_tls_write_internal(a_tls_t *tls, u8 *data, s32 data_len)
         break;
     }
 
-    if (ret == A_TLS_WANT_WRITE) {
+    if (ret == A_TLS_WANT_WRITE)
+    {
         tls->nbio = a_tls_buf_new(data_len);
-        if (tls->nbio == NULL) {
+        if (tls->nbio == NULL)
+        {
             a_tls_error(tls, "tls new write bio err");
             return A_TLS_ERR;
         }
@@ -625,8 +632,8 @@ s32 a_tls_snd_msg(a_tls_t *tls, u8 *data, s32 data_len, u8 type)
     s32 tosend;
     u8 *p = a_tls_tmp_record_buf;
 
-    if (type == A_TLS_RT_HANDHSHAKE
-        && a_tls_save_hs(tls, data, data_len) != A_TLS_OK)
+    if (type == A_TLS_RT_HANDHSHAKE && 
+        a_tls_save_hs(tls, data, data_len) != A_TLS_OK)
     {
         a_tls_error(tls, "tls save hs msg err %d", data_len);
         return A_TLS_ERR;
@@ -966,21 +973,20 @@ void a_tls_buf_free(a_tls_buf_t *ret)
 
 s32 a_tls_sess_new(a_tls_t *tls)
 {
-    a_tls_sess_t *sess;
-
-    sess = a_tls_malloc(sizeof(a_tls_sess_t));
-    if (NULL == sess) {
-        a_tls_error(tls, "tls sess new err");
-        return A_TLS_ERR;
+    a_tls_sess_t *sess = a_tls_malloc(sizeof(a_tls_sess_t));
+    if (sess)
+    {
+        memset(sess, 0, sizeof(a_tls_sess_t));
+        sess->sni = tls->handshake->sni;
+        sess->sni_len = tls->handshake->sni_len;
+        tls->handshake->sni = NULL;
+        tls->handshake->sni_len = 0;
+        tls->sess = sess;
+        return A_TLS_OK;
     }
 
-    memset(sess, 0, sizeof(a_tls_sess_t));
-    sess->sni = tls->handshake->sni;
-    sess->sni_len = tls->handshake->sni_len;
-    tls->handshake->sni = NULL;
-    tls->handshake->sni_len = 0;
-    tls->sess = sess;
-    return A_TLS_OK;
+    a_tls_error(tls, "tls sess new err");
+    return A_TLS_ERR;
 }
 
 s32 a_tls_check_and_set_curve(a_tls_t *tls, sigalg_pair_t *sig)
@@ -1265,16 +1271,18 @@ s32 a_tls_cipher_get(a_tls_t *tls, u8 *ciphers, u32 ciphers_len)
     u16 cipher_nid;
     a_cipher_t *c;
 
-    if (ciphers_len&1) {
+    if (ciphers_len&1)
+    {
         a_tls_error(tls, "tls ciphers len err:%d", ciphers_len);
         return A_TLS_ERR;
     }
 
-    if (tls->cfg->srv_prefer) {
-
+    if (tls->cfg->srv_prefer)
+    {
         c = tls->cfg->cipers;
 
-        while (c) {
+        while (c)
+        {
             u32 tmp_len = ciphers_len;
             p = ciphers;
 
@@ -1400,7 +1408,6 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
         {
             return A_TLS_ERR;
         }
-
     }
     else
     {
