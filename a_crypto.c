@@ -660,38 +660,39 @@ s32 a_crypto_gen_ec_pub(a_group_t *group, u8 **prv, u8 **pub, u32 *prv_len, u32 
     s32 ret = A_TLS_ERR;
     const EC_POINT *basepoint;
     EC_POINT *pub_key = NULL;
-    BN_CTX *ctx = NULL;
-    BIGNUM *priv_key = NULL, *order = NULL;
+    BN_CTX *ctx;
+    BIGNUM *priv_key;
+    BIGNUM *order;
 
-    ctx         = BN_CTX_new();
-    priv_key    = BN_new();
-    order       = BN_new();
+    ctx      = BN_CTX_new();
+    priv_key = BN_new();
+    order    = BN_new();
 
-    if (ctx == NULL
-        || priv_key == NULL
-        || order == NULL)
+    if (ctx      == NULL ||
+        priv_key == NULL || 
+        order    == NULL)
     {
         goto err;
     }
 
-    if ((basepoint = EC_GROUP_get0_generator(group->group))
-        == NULL)
+    basepoint = EC_GROUP_get0_generator(group->group);
+    if (basepoint == NULL)
     {
         printf("err a_crypto_gen_ec_pub %d group:%p\n",__LINE__, group->group);
         goto err;
     }
 
     /*Alloc result's memory*/
-    if ((pub_key = EC_POINT_new(group->group))
-        == NULL)
+    pub_key = EC_POINT_new(group->group);
+    if (pub_key == NULL)
     {
         printf("err a_crypto_gen_ec_pub %d\n",__LINE__);
         goto err;
     }
 
     /*Alloc priv_key's memory*/
-    if (!EC_GROUP_get_order(group->group, order, ctx)
-        || !BN_rand_range(priv_key, order))
+    if (!EC_GROUP_get_order(group->group, order, ctx) || 
+        !BN_rand_range(priv_key, order))
     {
         printf("err a_crypto_gen_ec_pub %d\n",__LINE__);
         goto err;
@@ -718,16 +719,20 @@ s32 a_crypto_gen_ec_pub(a_group_t *group, u8 **prv, u8 **pub, u32 *prv_len, u32 
     *prv = a_tls_malloc(BN_num_bytes(priv_key));
     *pub = a_tls_malloc(*pub_len);
 
-    if (*prv == NULL
-        || *pub == NULL)
+    if (*prv == NULL || 
+        *pub == NULL)
         goto err;
 
     if(!BN_bn2bin(priv_key, *prv))
         goto err;
 
-
-    EC_POINT_point2oct(group->group, pub_key, POINT_CONVERSION_UNCOMPRESSED,
-                       *pub, *pub_len, NULL);
+    EC_POINT_point2oct(
+        group->group, 
+        pub_key, 
+        POINT_CONVERSION_UNCOMPRESSED,
+        *pub, 
+        *pub_len, 
+        NULL);
 
     ret = A_TLS_OK;
 end:
@@ -744,12 +749,15 @@ end:
     }
 
     return ret;
+
 err:
-    if (*prv) {
+    if (*prv)
+    {
         a_tls_free(*prv);
         *prv = NULL;
     }
-    if (*pub) {
+    if (*pub)
+    {
         a_tls_free(*pub);
         *pub = NULL;
     }

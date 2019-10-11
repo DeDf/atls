@@ -40,8 +40,8 @@
 #define A_CRYPTO_MAX_MD_LEN         64
 #define A_CRYPTO_MAX_KEY_LEN        64
 #define A_CRYPTO_MAX_IV_LEN         16
-enum {
 
+enum {
     A_CRYPTO_CIPHER_RSA         = (1U<<0),
     A_CRYPTO_CIPHER_ECDHE       = (1U<<1),
     A_CRYPTO_CIPHER_ECDH        = (1U<<2),

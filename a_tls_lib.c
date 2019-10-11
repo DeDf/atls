@@ -1074,19 +1074,15 @@ s32 a_tls_check_and_set_sig(a_tls_t *tls, a_cipher_t *cipher)
 
     return A_TLS_ERR;
 }
+
 s32 a_tls_check_cipher(a_tls_t *tls, a_cipher_t *cipher)
 {
     /*check the version*/
-    if ((tls->version == A_TLS_TLS_1_0_VERSION
-            && !(cipher->flag&A_CRYPTO_CIPHER_TLS1))
-        || (tls->version == A_TLS_TLS_1_1_VERSION
-            && !(cipher->flag&A_CRYPTO_CIPHER_TLS1_1))
-        || (tls->version == A_TLS_TLS_1_2_VERSION
-            && !(cipher->flag&A_CRYPTO_CIPHER_TLS1_2))
-        || (tls->version == A_TLS_TLS_1_3_VERSION
-            && !(cipher->flag&A_CRYPTO_CIPHER_TLS1_3))
-        || (tls->version == A_TLS_GM_VERSION
-            && !(cipher->flag&A_CRYPTO_CIPHER_SM)))
+    if ((tls->version == A_TLS_TLS_1_0_VERSION && !(cipher->flag&A_CRYPTO_CIPHER_TLS1))   || 
+        (tls->version == A_TLS_TLS_1_1_VERSION && !(cipher->flag&A_CRYPTO_CIPHER_TLS1_1)) || 
+        (tls->version == A_TLS_TLS_1_2_VERSION && !(cipher->flag&A_CRYPTO_CIPHER_TLS1_2)) || 
+        (tls->version == A_TLS_TLS_1_3_VERSION && !(cipher->flag&A_CRYPTO_CIPHER_TLS1_3)) || 
+        (tls->version == A_TLS_GM_VERSION      && !(cipher->flag&A_CRYPTO_CIPHER_SM)))
     {
         return A_TLS_ERR;
     }
@@ -1097,8 +1093,8 @@ s32 a_tls_check_cipher(a_tls_t *tls, a_cipher_t *cipher)
     }
 
     if (cipher->flag&A_CRYPTO_CIPHER_ECDHE
-        && (((!tls->cfg->pkey[A_CRYPTO_NID_EC]) && (cipher->sign == A_CRYPTO_NID_EC))
-          || ((!tls->cfg->pkey[A_CRYPTO_NID_RSA]) && (cipher->sign == A_CRYPTO_NID_RSA))))
+        && (((!tls->cfg->pkey[A_CRYPTO_NID_EC])  && (cipher->sign == A_CRYPTO_NID_EC)) ||
+            ((!tls->cfg->pkey[A_CRYPTO_NID_RSA]) && (cipher->sign == A_CRYPTO_NID_RSA))))
     {
         return A_TLS_ERR;
     }
@@ -1279,7 +1275,7 @@ s32 a_tls_cipher_get(a_tls_t *tls, u8 *ciphers, u32 ciphers_len)
 
     if (tls->cfg->srv_prefer)
     {
-        c = tls->cfg->cipers;
+        c = tls->cfg->ciphers;
 
         while (c)
         {
@@ -1530,20 +1526,18 @@ void a_tls_cfg_free(a_tls_cfg_t *cfg)
 
 void *a_tls_cfg_new()
 {
-    a_tls_cfg_t *ret;
+    a_tls_cfg_t *cfg = a_tls_malloc(sizeof(a_tls_cfg_t));
+    if (cfg)
+    {
+        memset(cfg, 0, sizeof(a_tls_cfg_t));
 
-    ret = a_tls_malloc(sizeof(a_tls_cfg_t));
-    if (ret == NULL) {
-        return NULL;
+        cfg->max_early_data = 16384;
+        cfg->ciphers        = a_crypto_get_cipher_by_index(4);  // cipher 与 tls版本是关联的：a_crypto.c:136
+        cfg->srv_prefer     = 1;
+        cfg->ticket         = 1;
     }
 
-    memset(ret, 0, sizeof(a_tls_cfg_t));
-
-    ret->max_early_data = 16384;
-    ret->cipers         = a_crypto_get_cipher_by_index(0);
-    ret->srv_prefer     = 1;
-    ret->ticket         = 1;
-    return ret;
+    return cfg;
 }
 
 void a_tls_cfg_check_cert(a_tls_cfg_t *cfg)
@@ -1986,10 +1980,7 @@ void a_tls_init_env()
 {
 #if OPENSSL_VERSION_NUMBER >= 0x10100003L
 
-            if (!OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG
-#ifndef OPENSSL_NO_AUTOLOAD_CONFIG
-                                     | OPENSSL_INIT_LOAD_CONFIG
-#endif
+            if (!OPENSSL_init_crypto(  OPENSSL_INIT_LOAD_CONFIG
                                      | OPENSSL_INIT_ADD_ALL_CIPHERS
                                      | OPENSSL_INIT_ADD_ALL_DIGESTS,
                                      NULL))

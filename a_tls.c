@@ -470,8 +470,8 @@ s32 a_tls_send_srv_ske(a_tls_t *tls)
     u8 *sign_start, tbs[A_TLS_RAND_SIZE*2 + 5 + A_CRYPTO_MAX_EC_PUB_LEN];
     a_tls_handshake_t *hs = tls->handshake;
 
-    if (!(tls->sess->cipher->flag&A_CRYPTO_CIPHER_ECDHE)
-        && ! (tls->sess->cipher->flag&A_CRYPTO_CIPHER_ECC))
+    if (!(tls->sess->cipher->flag&A_CRYPTO_CIPHER_ECDHE) &&
+        !(tls->sess->cipher->flag&A_CRYPTO_CIPHER_ECC))
     {
         tls->state = A_TLS_STATE_SND_SRV_DONE;
         return A_TLS_OK;

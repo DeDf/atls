@@ -1,5 +1,7 @@
 
-#include "server_test.h"
+#include <stdio.h>
+#include <winsock2.h>
+#include "a_tls.h"
 
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"crypt32.lib")
@@ -17,6 +19,7 @@ int main(int argc, char* argv[])
     a_tls_cfg_t *cfg;
     a_tls_t *tls;
     struct timeval timeout={3,0};//3s
+    char *pchCertPath = NULL;
 
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
@@ -54,6 +57,10 @@ int main(int argc, char* argv[])
     if (cfg == NULL) {
         printf("a_tls_cfg_new error\n");
         exit(-2);
+    }
+
+    if (!a_tls_cfg_set_key(cfg, pchCertPath)) {  // …Ë÷√÷§ È
+        return "set ATLS SSL key file error";
     }
 
     while (1)
@@ -104,6 +111,7 @@ int main(int argc, char* argv[])
             goto next;
         }
         printf("Recv %d bytes from client %s\n", ret, buf);
+
         ret = a_tls_write(tls, (unsigned char*)replay, sizeof(replay) - 1);
         printf("reply to client :%d\n", ret);
 next:

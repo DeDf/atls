@@ -1,6 +1,8 @@
 #ifndef _A_TLS_H_INCLUDED_
 #define _A_TLS_H_INCLUDED_
 
+#define TLS_DEBUG  1
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -302,7 +304,7 @@ typedef struct {
     u32 ticket;
     s32 (*early_data_cb)(void *tls, u8 *data, u32 data_len);
     u32 max_early_data;
-    a_cipher_t  *cipers;
+    a_cipher_t  *ciphers;
     u32 srv_prefer;
 }a_tls_cfg_t;
 
