@@ -6,8 +6,6 @@
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"crypt32.lib")
 
-typedef int socklen_t;
-
 unsigned char buf[1024];
 unsigned short port = 44444;
 #define replay "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 23\r\nServer: mrpre\r\n\r\nWelcome to mrpre's Home"
@@ -15,12 +13,13 @@ unsigned short port = 44444;
 int main(int argc, char* argv[])
 {
     struct sockaddr_in server_addr;
-    int listen_fd, opt;
+    int listen_fd;
+    BOOL bOptVal = FALSE;
+    int bOptLen = sizeof (BOOL);
     a_tls_cfg_t *cfg;
     a_tls_t *tls;
-    struct timeval timeout={3,0};//3s
-    char *pchCertPath = NULL;
-
+    DWORD timeout = 3000;  //3s
+    //
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
@@ -39,7 +38,7 @@ int main(int argc, char* argv[])
         exit(-1);
     }
 
-    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&bOptVal, sizeof(bOptVal));
 
     printf("Bind local port:%d\n", port);
     if( bind(listen_fd, (struct sockaddr*)&server_addr,sizeof(server_addr))) {
@@ -59,15 +58,62 @@ int main(int argc, char* argv[])
         exit(-2);
     }
 
-    if (!a_tls_cfg_set_key(cfg, pchCertPath)) {  // ÉèÖÃÖ¤Êé
-        return "set ATLS SSL key file error";
+#if 1
+    printf("Setting ECC certificate\n");
+    if (!a_tls_cfg_set_key(cfg, "./cert/ecc.key")) {
+        printf("a_tls_cfg_set_key ecc.key error\n");
+        exit(-2);
     }
+
+    if (!a_tls_cfg_set_cert(cfg, "./cert/ecc.pem")) {
+        printf("a_tls_cfg_set_cert ecc.pem error\n");
+        exit(-2);
+    }
+
+    printf("Setting RSA certificate\n");
+    if (!a_tls_cfg_set_key(cfg, "./cert/rsa.key")) {
+       printf("a_tls_cfg_set_key rsa.key error\n");
+       exit(-2);
+    }
+
+    if (!a_tls_cfg_set_cert(cfg, "./cert/rsa.pem")) {
+        printf("a_tls_cfg_set_cert rsa.pem error\n");
+        exit(-2);
+    }
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    printf("Setting SM2 certificate\n");
+    /*Now Setting ENC param*/
+    if (!a_tls_cfg_set_key(cfg, "./cert/sm2.key")) {
+       printf("a_tls_cfg_set_key sm2.key error\n");
+       exit(-2);
+    }
+
+    if (!a_tls_cfg_set_cert(cfg, "./cert/sm2.pem")) {
+        printf("a_tls_cfg_set_cert sm2.pem error\n");
+        exit(-2);
+    }
+
+    /*Now Setting SIGN param*/
+    if (!a_tls_cfg_set_sign_key(cfg, "./cert/sm2.key")) {
+       printf("a_tls_cfg_set_key sm2.key error\n");
+       exit(-2);
+    }
+
+    if (!a_tls_cfg_set_sign_cert(cfg, "./cert/sm2.pem")) {
+        printf("a_tls_cfg_set_cert sm2.pem error\n");
+        exit(-2);
+    }
+#else
+    printf("Warning: GM SSL is not supported\n");
+#endif
 
     while (1)
     {
         struct sockaddr_in client_addr;
         int client_fd, ret;
-        socklen_t length = sizeof(client_addr);
+        int length = sizeof(client_addr);
 
         printf("Waiting client's connection....\n");
         client_fd = accept(listen_fd,(struct sockaddr*)&client_addr,&length);
@@ -85,7 +131,7 @@ int main(int argc, char* argv[])
             exit(-2);
         }
 
-        setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+        setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
 
         a_tls_set_fd(tls, client_fd);
         if (a_tls_handshake(tls) != 0)

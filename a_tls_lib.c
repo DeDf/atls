@@ -315,6 +315,7 @@ s32 a_tls_gen_tls_hmac(a_md_t *md, u8 *key, u8 *add, u32 add_len, u8 *data, u32 
     }
 #endif
 
+    {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     HMAC_CTX *ctx =  HMAC_CTX_new();
 #else
@@ -337,6 +338,7 @@ s32 a_tls_gen_tls_hmac(a_md_t *md, u8 *key, u8 *add, u32 add_len, u8 *data, u32 
 #else
     HMAC_CTX_cleanup(ctx);
 #endif
+    }
     return ret;
 }
 
