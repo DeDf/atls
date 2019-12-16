@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
     struct sockaddr_in server_addr;
     int listen_fd;
     BOOL bOptVal = FALSE;
-    int bOptLen = sizeof (BOOL);
     a_tls_cfg_t *cfg;
     a_tls_t *tls;
     DWORD timeout = 3000;  //3s
