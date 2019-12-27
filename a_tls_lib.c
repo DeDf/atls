@@ -432,11 +432,12 @@ sigalg_pair_t * a_tls_select_sigalg(a_tls_t *tls, void **key, a_md_t **md)
         || sign == A_CRYPTO_NID_EC)
     {
         ret = &g_sig_default_single[index];
-
-    } else {
-
+    }
+    else
+    {
         ret = &g_sig_default[index];
     }
+
 end:
     if (md) {
         *md = a_crypto_find_md(ret->md_nid);
@@ -448,6 +449,7 @@ end:
 
     return ret;
 }
+
 s32 a_tls_do_read(a_tls_t *tls, u8 *data, s32 data_len)
 {
     return recv(tls->fd, data, data_len, 0);

@@ -20,26 +20,29 @@
 #define likely(x)       (x) //__builtin_expect(!!(x), 1)
 #define unlikely(x)     (x) //__builtin_expect(!!(x), 0)
 
-#define n2s(c,s)	((s=(((unsigned int)(c[0]))<< 8)| \
-			    (((unsigned int)(c[1]))    )),c+=2)
+#define n2s(c,s)	((s=(((unsigned int)(c[0]))<< 8)| (((unsigned int)(c[1]))    )),c+=2)
+
+// 把u32截为u16并改变字节序
 #define s2n(s,c)	((c[0]=(unsigned char)(((s)>> 8)&0xff), \
-			  c[1]=(unsigned char)(((s)    )&0xff)),c+=2)
+                      c[1]=(unsigned char)(((s)    )&0xff)),c+=2)
+
 #define n2l(c,l)	(l =((unsigned long)(*((c)++)))<<24, \
-                 l|=((unsigned long)(*((c)++)))<<16, \
-                 l|=((unsigned long)(*((c)++)))<< 8, \
-                 l|=((unsigned long)(*((c)++))))
+                     l|=((unsigned long)(*((c)++)))<<16, \
+                     l|=((unsigned long)(*((c)++)))<< 8, \
+                     l|=((unsigned long)(*((c)++))))
 
 #define l2n(l,c)	(*((c)++)=(unsigned char)(((l)>>24)&0xff), \
-                 *((c)++)=(unsigned char)(((l)>>16)&0xff), \
-                 *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
-                 *((c)++)=(unsigned char)(((l)    )&0xff))
+                     *((c)++)=(unsigned char)(((l)>>16)&0xff), \
+                     *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
+                     *((c)++)=(unsigned char)(((l)    )&0xff))
+
 #define n2l3(c,l)	((l =(((unsigned long)(c[0]))<<16)| \
-                     (((unsigned long)(c[1]))<< 8)| \
-                     (((unsigned long)(c[2]))    )),c+=3)
+                         (((unsigned long)(c[1]))<< 8)| \
+                         (((unsigned long)(c[2]))    )),c+=3)
 
 #define l2n3(l,c)	((c[0]=(unsigned char)(((l)>>16)&0xff), \
-                  c[1]=(unsigned char)(((l)>> 8)&0xff), \
-                  c[2]=(unsigned char)(((l)    )&0xff)),c+=3)
+                      c[1]=(unsigned char)(((l)>> 8)&0xff), \
+                      c[2]=(unsigned char)(((l)    )&0xff)),c+=3)
 
 // #define a_tls_error(__tls, __str, __args...) \
 // do\
@@ -193,7 +196,7 @@ enum {
     A_TLS_STATE_SND_SRV_CERT_VFY,
     A_TLS_STATE_SND_SRV_FINISH,
     A_TLS_STATE_GET_CLNT_CCS,//11
-    A_TLS_STATE_GET_CLNT_CKE,
+    A_TLS_STATE_GET_CLNT_KE,
     A_TLS_STATE_GET_EARLY_DATA,
     A_TLS_STATE_GET_CLNT_FINISH,
     A_TLS_STATE_SND_NEW_TICKET,
@@ -378,7 +381,7 @@ struct a_tls {
     s8 dir;
     u8 state;
     s8 read_state;
-    s8 hit;
+    s8 hit;             // 存在sess(上次连接)
     u8 gm_support;
     u8 selected_cert;
     u16 version;

@@ -1,8 +1,7 @@
 
 #include "a_tls.h"
 
-s32 a_tls_get_client_hello(a_tls_t *tls);
-s32 a_tls_get_client_cke(a_tls_t *tls);
+s32 a_tls_get_client_ke(a_tls_t *tls);
 s32 a_tls13_snd_srv_hello(a_tls_t *tls);
 s32 a_tls13_snd_srv_ccs(a_tls_t *tls);
 s32 a_tls_snd_enc_ext(a_tls_t *tls);

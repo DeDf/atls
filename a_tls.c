@@ -1,12 +1,12 @@
 
 #include "a_tls.h"
-#include <stdarg.h>
 
+//s32 a_tls_get_client_hello(a_tls_t *tls);
 s32 a_tls_send_srv_hello(a_tls_t *tls);
 s32 a_tls_send_srv_cert(a_tls_t *tls);
-s32 a_tls_send_srv_ske(a_tls_t *tls);
+s32 a_tls_send_srv_ke(a_tls_t *tls);
 s32 a_tls_send_srv_done(a_tls_t *tls);
-s32 a_tls_get_client_cke(a_tls_t *tls);
+s32 a_tls_get_client_ke(a_tls_t *tls);
 s32 a_tls_get_client_ccs(a_tls_t *tls);
 s32 a_tls_get_client_finished(a_tls_t *tls);
 s32 a_tls_send_srv_ccs(a_tls_t *tls);
@@ -35,21 +35,21 @@ method_t tls_spec =
 
 state_func tls_state_proc[A_TLS_STATE_MAX] =
 {
-    /*[A_TLS_STATE_INIT]              = */a_tls_init,               // done!
-    /*[A_TLS_STATE_GET_CLNT_HELLO]    = */a_tls_get_client_hello,
-    /*[A_TLS_STATE_SND_SRV_HELLO]     = */a_tls_send_srv_hello,
-    /*[A_TLS_STATE_SND_SRV_KE]        = */a_tls_send_srv_ske,
-    /*[A_TLS_STATE_SND_SRV_DONE]      = */a_tls_send_srv_done,
-    /*[A_TLS_STATE_SND_SRV_CCS]       = */a_tls_send_srv_ccs,
-    /*[A_TLS_STATE_SND_SRV_TICKET]    = */a_tls_send_srv_ticket,
+    a_tls_init,               // done!
+    a_tls_get_client_hello,
+    a_tls_send_srv_hello,
+    a_tls_send_srv_ke,
+    a_tls_send_srv_done,
+    a_tls_send_srv_ccs,
+    a_tls_send_srv_ticket,
     NULL,
-    /*[A_TLS_STATE_SND_SRV_CERT]      = */a_tls_send_srv_cert,
+    a_tls_send_srv_cert,
     NULL,
-    /*[A_TLS_STATE_SND_SRV_FINISH]    = */a_tls_send_srv_finished,
-    /*[A_TLS_STATE_GET_CLNT_CCS]      = */a_tls_get_client_ccs,
-    /*[A_TLS_STATE_GET_CLNT_CKE]      = */a_tls_get_client_cke,
+    a_tls_send_srv_finished,
+    a_tls_get_client_ccs,
+    a_tls_get_client_ke,
     NULL,
-    /*[A_TLS_STATE_GET_CLNT_FINISH]   = */a_tls_get_client_finished,
+    a_tls_get_client_finished,
 };
 
 void a_tls_error(a_tls_t *tls, char *format, ...)
@@ -350,7 +350,7 @@ s32 a_tls_get_client_ccs(a_tls_t *tls)
     return A_TLS_OK;
 }
 
-s32 a_tls_get_client_cke(a_tls_t *tls)
+s32 a_tls_get_client_ke(a_tls_t *tls)
 {
     msg_t msg;
     s32 ret;
@@ -378,15 +378,21 @@ s32 a_tls_send_srv_done(a_tls_t *tls)
 
     *p++ = A_TLS_MT_SRV_DONE;
     l2n3(0, p);
-    tls->state = A_TLS_STATE_GET_CLNT_CKE;
+    tls->state = A_TLS_STATE_GET_CLNT_KE;
     return a_tls_snd_msg(tls, a_tls_tmp_msg_buf, 4, A_TLS_RT_HANDHSHAKE);
 }
 
 s32 a_tls_get_ske_tbs(a_tls_t *tls, u8 *in, u32 in_len, u8 *tbs, u32 *tbs_len)
 {
-    memcpy(tbs, tls->handshake->clnt_random, A_TLS_RAND_SIZE);
-    memcpy(tbs + A_TLS_RAND_SIZE, tls->handshake->srv_random, A_TLS_RAND_SIZE);
-    memcpy(tbs + A_TLS_RAND_SIZE + A_TLS_RAND_SIZE, in, in_len);
+    u8 *p = tbs;
+    //
+    memcpy(p, tls->handshake->clnt_random, A_TLS_RAND_SIZE);
+    p += A_TLS_RAND_SIZE;
+    //
+    memcpy(p, tls->handshake->srv_random, A_TLS_RAND_SIZE);
+    p += A_TLS_RAND_SIZE;
+    //
+    memcpy(p, in, in_len);
 
     *tbs_len = A_TLS_RAND_SIZE + A_TLS_RAND_SIZE + in_len;
     return A_TLS_OK;
@@ -458,7 +464,7 @@ s32 a_tls_snd_srv_ske_gm(a_tls_t *tls)  // Server Key Exchange
     return a_tls_snd_msg(tls, a_tls_tmp_msg_buf, sign_len, A_TLS_RT_HANDHSHAKE);
 }
 
-s32 a_tls_send_srv_ske(a_tls_t *tls)
+s32 a_tls_send_srv_ke(a_tls_t *tls)
 {
     sigalg_pair_t *sig;
     crypto_info_t info;
@@ -486,7 +492,7 @@ s32 a_tls_send_srv_ske(a_tls_t *tls)
     p += 3;
 
     sign_start = p;
-    *p++ = 0x03;/*named curve*/
+    *p++ = 0x03;  /*named curve*/
     s2n(tls->support_gp->tls_nid, p);
 
     a_crypto_gen_ec_pub(
@@ -572,7 +578,6 @@ s32 a_tls_snd_srv_cert_gm(a_tls_t *tls)
 
     tls->state = A_TLS_STATE_SND_SRV_KE;
     return a_tls_snd_msg(tls, a_tls_tmp_msg_buf, len, A_TLS_RT_HANDHSHAKE);
-
 }
 
 s32 a_tls_send_srv_cert(a_tls_t *tls)
@@ -631,10 +636,12 @@ s32 a_tls_send_srv_hello(a_tls_t *tls)
     len = (u32)(p - a_tls_tmp_msg_buf);
     l2n3((len - 4), l);
 
-    if (tls->hit) {
+    if (tls->hit)
+    {
         tls->state = A_TLS_STATE_SND_SRV_CCS;
-
-    } else {
+    }
+    else
+    {
         tls->state = A_TLS_STATE_SND_SRV_CERT;
     }
 
