@@ -381,26 +381,23 @@ void a_tls_prf(a_tls_t *tls, u8 *buf, u32 buf_len, u8 *sec, u32 sec_len, u8 *out
 
 s32 a_tls_gen_master_secret(a_tls_t *tls, u8 *pms, u32 pms_len)
 {
-    u8 buf[A_TLS_MASTER_KEY_BUF_LEN], buf_tmp[A_TLS_MASTER_KEY_BUF_LEN];
-    u8 *p;
-
-    memset(buf, 0, A_TLS_MASTER_KEY_BUF_LEN);
-    memset(buf_tmp, 0, A_TLS_MASTER_KEY_BUF_LEN);
-    p = buf;
-
+    u8 buf[A_TLS_MASTER_KEY_BUF_LEN]     = {0};
+    u8 buf_tmp[A_TLS_MASTER_KEY_BUF_LEN] = {0};
+    //
+    u8 *p = buf;
     memcpy(p, A_TLS_MASTER_SECRET_CONST, A_TLS_MASTER_SECRET_CONST_LEN);
     p += A_TLS_MASTER_SECRET_CONST_LEN;
-
+    //
     memcpy(p, tls->handshake->clnt_random, A_TLS_RAND_SIZE);
     p += A_TLS_RAND_SIZE;
-
+    //
     memcpy(p, tls->handshake->srv_random, A_TLS_RAND_SIZE);
+
     memset(tls->sess->master_secret, 0, sizeof(tls->sess->master_secret));
 
     a_tls_prf(tls, buf, sizeof(buf), pms, pms_len, tls->sess->master_secret, buf_tmp, A_TLS_MASTER_KEY_LEN);
 
     return A_TLS_OK;
-
 }
 
 s32 a_tls_get_sigalg_index(u32 nid)

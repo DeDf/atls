@@ -518,19 +518,18 @@ s32 a_tls_send_srv_ke(a_tls_t *tls)
 #ifdef TLS_DEBUG
     {
         u32 k;
-        printf("tbs :%d\n",tbs_len);
-        for(k=0;k<tbs_len;k++)
-            printf("%02X", tbs[k]);
-        printf("\n");
+        printf("tbs (clnt_random srv_random sign): %d (32 + 32 + %d)\n",tbs_len, sign_len);
+        printf("clnt_random:\n"); {for(k=0; k<32;k++)       printf("%02X", tbs[k]);} printf("\n");
+        printf("srv_random:\n");  {for(k=32;k<64;k++)       printf("%02X", tbs[k]);} printf("\n");
+        printf("sign:\n");        {for(k=64;k<tbs_len;k++)  printf("%02X", tbs[k]);} printf("\n");
     }
 #endif
-    memset(&info.async, 0 ,sizeof(info.async));
 
     info.async.md = md;
+    info.async.key = key;
     info.async.tbs = tbs;
     info.async.tbs_len = tbs_len;
     info.async.mode = sig->mode;
-    info.async.key = key;
     info.async.out = p+2;
     info.async.out_len = &len;
 
