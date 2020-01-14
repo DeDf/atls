@@ -5,7 +5,7 @@
 s32 a_tls_send_srv_hello(a_tls_t *tls);
 s32 a_tls_send_srv_cert(a_tls_t *tls);
 s32 a_tls_send_srv_ke(a_tls_t *tls);
-s32 a_tls_send_srv_done(a_tls_t *tls);
+s32 a_tls_send_srv_hello_done(a_tls_t *tls);
 s32 a_tls_get_client_ke(a_tls_t *tls);
 s32 a_tls_get_client_ccs(a_tls_t *tls);
 s32 a_tls_get_client_finished(a_tls_t *tls);
@@ -39,7 +39,7 @@ state_func tls_state_proc[A_TLS_STATE_MAX] =
     a_tls_get_client_hello,
     a_tls_send_srv_hello,
     a_tls_send_srv_ke,
-    a_tls_send_srv_done,
+    a_tls_send_srv_hello_done,
     a_tls_send_srv_ccs,
     a_tls_send_srv_ticket,
     NULL,
@@ -210,6 +210,10 @@ s32 a_tls_send_srv_ticket(a_tls_t *tls)
     u8 *p = a_tls_tmp_msg_buf, *l, *l2;
     u32 len;
 
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
+
     *p++ = A_TLS_MT_SESS_TICKET;
 
     l = p;
@@ -235,6 +239,10 @@ s32 a_tls_send_srv_finished(a_tls_t *tls)
 {
     u8 *p = a_tls_tmp_msg_buf;
 
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
+
     *p++ = A_TLS_MT_FINISHED;
     l2n3(12, p);
 
@@ -256,6 +264,10 @@ s32 a_tls_send_srv_ccs(a_tls_t *tls)
 {
     u8 *p = a_tls_tmp_msg_buf;
 
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
+
     *p++ = 0x01;
 
     tls->state = A_TLS_STATE_SND_SRV_FINISH;
@@ -271,6 +283,10 @@ s32 a_tls_get_client_finished(a_tls_t *tls)
     u32 len;
     u8 *p;
     u8 prf[12];
+
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
 
     ret = a_tls_get_message(tls, &msg, A_TLS_RT_HANDHSHAKE);
     if (ret != A_TLS_OK) {
@@ -334,6 +350,10 @@ s32 a_tls_get_client_ccs(a_tls_t *tls)
     msg_t msg;
     s32 ret;
 
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
+
     ret = a_tls_get_message(tls, &msg, A_TLS_RT_HANDHSHAKE);
     if (ret != A_TLS_OK) {
         a_tls_error(tls, "clnt ccs get message error:%d", ret);
@@ -355,6 +375,10 @@ s32 a_tls_get_client_ke(a_tls_t *tls)
     msg_t msg;
     s32 ret;
 
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
+
     ret = a_tls_get_message(tls, &msg, A_TLS_RT_HANDHSHAKE);
     if (ret != A_TLS_OK) {
         a_tls_error(tls, "clnt ccs get message error:%d", ret);
@@ -372,9 +396,13 @@ s32 a_tls_get_client_ke(a_tls_t *tls)
     return A_TLS_OK;
 }
 
-s32 a_tls_send_srv_done(a_tls_t *tls)
+s32 a_tls_send_srv_hello_done(a_tls_t *tls)
 {
     u8 *p = a_tls_tmp_msg_buf;
+
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
 
     *p++ = A_TLS_MT_SRV_DONE;
     l2n3(0, p);
@@ -475,6 +503,10 @@ s32 a_tls_send_srv_ke(a_tls_t *tls)
     u8 *p = a_tls_tmp_msg_buf, *l;
     u8 *sign_start, tbs[A_TLS_RAND_SIZE*2 + 5 + A_CRYPTO_MAX_EC_PUB_LEN];
     a_tls_handshake_t *hs = tls->handshake;
+
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
 
     if (!(tls->sess->cipher->flag&A_CRYPTO_CIPHER_ECDHE) &&
         !(tls->sess->cipher->flag&A_CRYPTO_CIPHER_ECC))
@@ -584,6 +616,10 @@ s32 a_tls_send_srv_cert(a_tls_t *tls)
     s32 len ,index = 0;
     u8 *p = a_tls_tmp_msg_buf, *l;
 
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
+
     if (IS_TLSGM(tls))
     {
         return a_tls_snd_srv_cert_gm(tls);
@@ -612,6 +648,10 @@ s32 a_tls_send_srv_hello(a_tls_t *tls)
 {
     s32 len;
     u8 *p = a_tls_tmp_msg_buf, *l;
+
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
 
     *p++ = A_TLS_MT_SRV_HELLO;
     l = p;
@@ -652,6 +692,10 @@ s32 a_tls_get_client_hello(a_tls_t *tls)
 {
     s32 ret;
     msg_t msg;
+
+#ifdef TLS_DEBUG
+    printf("a_tls_handshake[%d]: %s()\n", tls->state, __FUNCTION__);
+#endif
 
     ret = a_tls_get_message(tls, &msg, A_TLS_RT_HANDHSHAKE);
     if (ret != A_TLS_OK) {

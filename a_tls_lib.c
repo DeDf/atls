@@ -907,7 +907,7 @@ s32 a_tls_handshake(a_tls_t *tls)
     {
         ret = tls->state_proc[tls->state](tls);
 #ifdef TLS_DEBUG
-        printf("tls_state_proc ret:%d end state:%d\n", ret, tls->state);
+        printf("tls_state_proc ret:%d end state:%d\n\n", ret, tls->state);
 #endif
         if (ret != A_TLS_OK)
         {
@@ -1366,6 +1366,10 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
         return A_TLS_ERR;
     }
 
+#ifdef TLS_DEBUG
+    printf(" SSL_v%d.%d\n", p[0], p[1]);
+#endif
+
     n2s(p, version);
     tls->handshake->clnt_version = version;
 
@@ -1639,7 +1643,7 @@ void a_tls_free_tls(a_tls_t *tls)
 
     for (i = 0; i < sizeof(am_cnt)/sizeof(u32); i++) {
         if (am_cnt[i]){
-            printf("size:%d cnt:%d\n", i , am_cnt[i]);
+            printf("size:%d cnt:%d\n", i, am_cnt[i]);
         }
     }
 }

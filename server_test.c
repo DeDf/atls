@@ -108,13 +108,13 @@ int main(int argc, char* argv[])
     printf("Warning: GM SSL is not supported\n");
 #endif
 
-    while (1)
+    //while (1)
     {
         struct sockaddr_in client_addr;
         int client_fd, ret;
         int length = sizeof(client_addr);
 
-        printf("Waiting client's connection....\n");
+        printf("Waiting client's connection....\n\n");
         client_fd = accept(listen_fd,(struct sockaddr*)&client_addr,&length);
         if (client_fd < 0) {
             closesocket(listen_fd);
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
             exit(-2);
         }
 
-        printf("process New client\n");
+        printf("process New client ~\n");
         tls = a_tls_new(cfg);
         if (tls == NULL) {
             closesocket(listen_fd);
@@ -138,20 +138,20 @@ int main(int argc, char* argv[])
             printf("a_tls_handshake error\n");
             goto next;
         }
+        printf("a_tls_handshake success ~\n\n");
 
         memset(buf, 0 ,sizeof(buf));
         printf("Try to read %zu bytes from client.....\n", sizeof(buf));
-        ret = a_tls_read(tls ,buf, sizeof(buf));
+        ret = a_tls_read(tls, buf, sizeof(buf));
         if (ret <= 0)
         {
-            printf("ret:%d\n",ret);
             if (ret == A_TLS_READ_FIN)
             {
                 printf("a_tls_read fin\n");
             }
             else
             {
-                printf("a_tls_read error\n");
+                printf("a_tls_read error, ret : [%d] !\n", ret);
             }
             goto next;
         }
