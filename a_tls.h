@@ -10,6 +10,8 @@
 #include "a_crypto.h"
 #include <winsock2.h>
 
+void __cdecl __report_rangecheckfailure(void);
+
 #define u32 unsigned int
 #define u16 unsigned short
 #define s32 int

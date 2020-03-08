@@ -10,10 +10,15 @@ unsigned char buf[1024];
 unsigned short port = 44444;
 #define replay "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 23\r\nServer: mrpre\r\n\r\nWelcome to mrpre's Home"
 
+void __cdecl __report_rangecheckfailure(void)
+{
+    ExitProcess(1);
+}
+
 int main(int argc, char* argv[])
 {
     struct sockaddr_in server_addr;
-    int listen_fd;
+    SOCKET listen_fd;
     BOOL bOptVal = FALSE;
     a_tls_cfg_t *cfg;
     a_tls_t *tls;
@@ -110,8 +115,9 @@ int main(int argc, char* argv[])
 
     //while (1)
     {
+        int ret;
+        SOCKET client_fd;
         struct sockaddr_in client_addr;
-        int client_fd, ret;
         int length = sizeof(client_addr);
 
         printf("Waiting client's connection....\n\n");
@@ -132,7 +138,7 @@ int main(int argc, char* argv[])
 
         setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
 
-        a_tls_set_fd(tls, client_fd);
+        a_tls_set_fd(tls, (int)client_fd);
         if (a_tls_handshake(tls) != 0)
         {
             printf("a_tls_handshake error\n");

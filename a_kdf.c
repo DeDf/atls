@@ -70,7 +70,7 @@ s32 a_tls_hkdf_expand_label(a_md_t *md,
 {
     u8 HkdfLabel[2 + 1 + 255 + 1 + A_CRYPTO_MAX_MD_LEN];
     u8 *p;
-    u32 label_len = strlen(label);
+    u32 label_len = (u32)strlen(label);
     p = HkdfLabel;
     s2n(out_len, p);
     *p++ = 6 + label_len;

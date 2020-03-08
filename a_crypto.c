@@ -1,7 +1,11 @@
 
 #include "a_tls.h"
 
-#pragma comment ( lib, "libeay32.lib" )
+#if _DEBUG
+#pragma comment ( lib, "libeay32MD.lib" )
+#else
+#pragma comment ( lib, "libeay32MT.lib" )
+#endif
 
 #define for_each_cipher(cipher)   \
     for(i = 0; i < sizeof(a_ciphers)/sizeof(a_cipher_t) && (cipher = &a_ciphers[i]) != NULL; i++)
