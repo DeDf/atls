@@ -312,12 +312,12 @@ s32 a_tls13_get_clnt_finished(a_tls_t *tls)
         remove_eoed = 4;
     }
 
-    tls->handshake->diget_off -= remove_eoed;
+    tls->handshake->diget_offset -= remove_eoed;
     /*read*/
     a_tls_change_cipher(tls, A_TLS_SECRET_READ|A_TLS_SECRET_APP);
     /*write*/
     a_tls_change_cipher(tls, A_TLS_SECRET_WRITE|A_TLS_SECRET_APP);
-    tls->handshake->diget_off += remove_eoed;
+    tls->handshake->diget_offset += remove_eoed;
 
     /*we have to save handshake to buf in order to calc res master secret
      *resumption_master_secret may be used to construct new session ticket

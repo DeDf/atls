@@ -281,7 +281,7 @@ typedef struct {
     u8 session_id[A_TLS_SESS_ID_SIZE];
     u8 *diget_cache;
     u32 diget_len;
-    u32 diget_off;
+    u32 diget_offset;
     u32 sig_index;
     u8 *sni;
     u32 sni_len;

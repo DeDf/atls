@@ -549,7 +549,7 @@ s32 a_tls_get_hs_digest(a_tls_t *tls, u8 *out, u32 *out_len)
 
     a_md_do_digest(md,
         tls->handshake->diget_cache,
-        tls->handshake->diget_off,
+        tls->handshake->diget_offset,
         out);
 
     *out_len = md->hash_size;
@@ -559,7 +559,7 @@ s32 a_tls_get_hs_digest(a_tls_t *tls, u8 *out, u32 *out_len)
 s32 a_tls_get_hs_data(a_tls_t *tls, u8 **out, u32 *out_len)
 {
     *out = tls->handshake->diget_cache;
-    *out_len = tls->handshake->diget_off;
+    *out_len = tls->handshake->diget_offset;
     return A_TLS_OK;
 }
 
@@ -604,11 +604,11 @@ s32 a_tls_save_hs(a_tls_t *tls, u8 *data, s32 data_len)
 {
     a_tls_handshake_t *hs = tls->handshake;
     u32 max_size = hs->diget_len;
-    u32 use_len = hs->diget_off;
-    u8 *new_digest_cache = NULL;
 
-    if(unlikely(use_len + data_len > max_size))
+    if (unlikely(hs->diget_offset + data_len > max_size))
     {
+        u8 *new_digest_cache = NULL;
+
         max_size += (data_len + 2048) & (~(2048 - 1));
         new_digest_cache = a_tls_malloc(max_size);
         if (new_digest_cache == NULL)
@@ -616,15 +616,16 @@ s32 a_tls_save_hs(a_tls_t *tls, u8 *data, s32 data_len)
             a_tls_error(tls, "tls realloc digest err");
             return A_TLS_ERR;
         }
-        memcpy(new_digest_cache, hs->diget_cache, hs->diget_off);
+        memcpy(new_digest_cache, hs->diget_cache, hs->diget_offset);
         a_tls_free(hs->diget_cache);
 
         hs->diget_cache = new_digest_cache;
         hs->diget_len = max_size;
     }
 
-    memcpy(hs->diget_cache + use_len, data, data_len);
-    hs->diget_off += data_len;
+    memcpy(hs->diget_cache + hs->diget_offset, data, data_len);
+    hs->diget_offset += data_len;
+
     return A_TLS_OK;
 }
 
@@ -1283,42 +1284,46 @@ s32 a_tls_cipher_get(a_tls_t *tls, u8 *ciphers, u32 ciphers_len)
             u32 tmp_len = ciphers_len;
             p = ciphers;
 
-            if(a_tls_check_cipher(tls, c) != A_TLS_OK
-                || c->md == NULL) {
+            if(a_tls_check_cipher(tls, c) != A_TLS_OK || c->md == NULL)
+            {
                 c = c->next;
                 continue;
             }
 
             /*whether the client's sig_algs are compatible for this cipher*/
-            if (tls->handshake->clnt_sig[0] != 0
-                && a_tls_check_and_set_sig(tls, c) != A_TLS_OK) {
+            if (tls->handshake->clnt_sig[0] != 0 &&
+                a_tls_check_and_set_sig(tls, c) != A_TLS_OK)
+            {
                 continue;
             }
 
-            while(tmp_len) {
+            while(tmp_len)
+            {
                 n2s(p, cipher_nid);
-                if (cipher_nid == c->tls_nid) {
+                if (cipher_nid == c->tls_nid)
+                {
                     break;
                 }
                 tmp_len -= 2;
             }
 
-            if (tmp_len == 0) {
+            if (tmp_len == 0)
+            {
                 c = c->next;
                 continue;
             }
 
-            tls->sess->cipher   = c;
-            tls->sess->md       = c->md;
+            tls->sess->cipher = c;
+            tls->sess->md     = c->md;
             return A_TLS_OK;
-
         }
 
         a_tls_error(tls, "tls ciphers find err");
         return A_TLS_ERR;
     }
 
-    while(ciphers_len) {
+    while(ciphers_len)
+    {
         n2s(p, cipher_nid);
         ciphers_len -= 2;
 
@@ -1344,23 +1349,19 @@ s32 a_tls_cipher_get(a_tls_t *tls, u8 *ciphers, u32 ciphers_len)
 
 s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
 {
-    u8 *p, *ciphers;
+    u8 *ciphers;
     s32 len, ciphers_len, ext_len;
     u16 version;
-
-    p = msg->data;
-
-    if (*p++ != A_TLS_MT_CLNT_HELLO)
+    //
+    u8 *p = msg->data;
+    if (*p++ != A_TLS_MT_CLNT_HELLO)      /*Not client hello message*/
     {
-        /*Not client hello message*/
         a_tls_error(tls, "tls clnt_hello type err");
         return A_TLS_ERR;
     }
 
     n2l3(p, len);
-
-    /*client hello must monopolize the record totally*/
-    if (msg->data + msg->len != p + len)
+    if (msg->data + msg->len != p + len)  // verifies len
     {
         a_tls_error(tls, "tls clnt_hello len err msg->len:%d, len:%d", msg->len, len);
         return A_TLS_ERR;
@@ -1378,13 +1379,14 @@ s32 a_tls_process_clnt_hello(a_tls_t *tls, msg_t *msg)
 
     /*session id len*/
     len = *p++;
-    memcpy(tls->handshake->session_id, p, len);
-    p += len;
+    if (len)
+    {
+        memcpy(tls->handshake->session_id, p, len);
+        p += len;
+    }
 
     n2s(p, ciphers_len);
     ciphers = p;
-
-    (void)ciphers;
     p += ciphers_len;
 
     /*compress*/
