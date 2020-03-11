@@ -641,7 +641,6 @@ s32 a_tls_send_srv_cert(a_tls_t *tls)
 
     tls->state = A_TLS_STATE_SND_SRV_KE;
     return a_tls_snd_msg(tls, a_tls_tmp_msg_buf, len, A_TLS_RT_HANDHSHAKE);
-
 }
 
 s32 a_tls_send_srv_hello(a_tls_t *tls)

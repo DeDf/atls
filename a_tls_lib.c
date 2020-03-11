@@ -1249,9 +1249,9 @@ s32 a_tls_construct_srv_hello(a_tls_t *tls,  u8 *buf)  // ServerHello
         *p++ = A_TLS_SESS_ID_SIZE;
         memcpy(p, tls->handshake->session_id, A_TLS_SESS_ID_SIZE);
         p += A_TLS_SESS_ID_SIZE;
-
-    } else {
-        /*only session ticket support*/
+    }
+    else  /*only session ticket support*/
+    {
         *p++ = 0;
     }
 

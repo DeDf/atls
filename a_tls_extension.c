@@ -650,12 +650,14 @@ s32 a_tls_construct_extension(a_tls_t *tls, u8 *buf, u32 type)
 
     init_ext_proc();
 
-    for (i = A_TLS_EXT_SRV_NAME; i < A_TLS_EXT_MAX;) {
+    for (i = A_TLS_EXT_SRV_NAME; i < A_TLS_EXT_MAX;)
+    {
         if (ext_proc[i].gen
             && (tls->flag & ext_proc[i].flag))
         {
             ret = ext_proc[i].gen(tls, p, type);
-            if (ret < 0) {
+            if (ret < 0)
+            {
                 return ret;
             }
             p += ret;
